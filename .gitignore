@@ -60,3 +60,6 @@ backups/
 
 # OS
 Thumbs.db
+
+# Local Netlify folder
+.netlify
