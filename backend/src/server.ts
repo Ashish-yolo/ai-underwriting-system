@@ -28,11 +28,13 @@ const startServer = async () => {
     logger.info('✅ MongoDB connected');
 
     // Test Redis
-    await redis.ping();
-    logger.info('✅ Redis connected');
+    if (redis) {
+      await redis.ping();
+      logger.info('✅ Redis connected');
+    }
 
     // Start Express server
-    const server = app.listen(PORT, () => {
+    const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info('========================================');
       logger.info(`🚀 AI Underwriting System`);
       logger.info(`📍 Environment: ${config.NODE_ENV}`);
