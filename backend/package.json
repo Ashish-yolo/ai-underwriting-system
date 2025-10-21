@@ -5,7 +5,7 @@
   "main": "src/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
+    "build": "tsc --noEmitOnError false",
     "start": "node dist/server.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
@@ -50,6 +50,7 @@
     "@types/jsonwebtoken": "^9.0.5",
     "@types/multer": "^1.4.11",
     "@types/uuid": "^9.0.7",
+    "@types/pg": "^8.10.9",
     "typescript": "^5.3.3",
     "ts-node": "^10.9.2",
     "nodemon": "^3.0.2",
