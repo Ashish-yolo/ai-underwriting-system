@@ -79,8 +79,8 @@ export const config: EnvConfig = {
 
   // Database
   DATABASE_URL: getEnvVar('DATABASE_URL'),
-  MONGODB_URL: getEnvVar('MONGODB_URL'),
-  REDIS_URL: getEnvVar('REDIS_URL', 'redis://localhost:6379'),
+  MONGODB_URL: getEnvVar('MONGODB_URL', ''),
+  REDIS_URL: getEnvVar('REDIS_URL', ''),
 
   // Security
   JWT_SECRET: getEnvVar('JWT_SECRET'),
@@ -126,7 +126,6 @@ export const config: EnvConfig = {
 export const validateConfig = (): void => {
   const requiredVars = [
     'DATABASE_URL',
-    'MONGODB_URL',
     'JWT_SECRET',
     'ENCRYPTION_KEY',
     'WEBHOOK_SECRET',
