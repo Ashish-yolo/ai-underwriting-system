@@ -16,24 +16,7 @@ try {
 // Start server
 const startServer = async () => {
   try {
-    // Test database connections
-    logger.info('Testing database connections...');
-
-    // Test PostgreSQL
-    await pool.query('SELECT NOW()');
-    logger.info('✅ PostgreSQL connected');
-
-    // Connect to MongoDB
-    await connectMongoDB();
-    logger.info('✅ MongoDB connected');
-
-    // Test Redis
-    if (redis) {
-      await redis.ping();
-      logger.info('✅ Redis connected');
-    }
-
-    // Start Express server
+    // Start Express server FIRST (so Render detects the port)
     const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info('========================================');
       logger.info(`🚀 AI Underwriting System`);
@@ -43,6 +26,34 @@ const startServer = async () => {
       logger.info(`❤️  Health Check: http://localhost:${PORT}/health`);
       logger.info('========================================');
     });
+
+    // Test database connections in background
+    logger.info('Testing database connections...');
+
+    // Test PostgreSQL with timeout
+    try {
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('PostgreSQL connection timeout')), 10000)
+      );
+      await Promise.race([pool.query('SELECT NOW()'), timeoutPromise]);
+      logger.info('✅ PostgreSQL connected');
+    } catch (error) {
+      logger.error(`❌ PostgreSQL connection error: ${error.message}`);
+      logger.warn('⚠️  Server started but PostgreSQL is not connected');
+    }
+
+    // Connect to MongoDB
+    await connectMongoDB();
+
+    // Test Redis
+    if (redis) {
+      try {
+        await redis.ping();
+        logger.info('✅ Redis connected');
+      } catch (error) {
+        logger.warn('⚠️  Redis ping failed but continuing...');
+      }
+    }
 
     // Graceful shutdown
     const gracefulShutdown = async (signal: string) => {
