@@ -88,7 +88,11 @@ export const query = async (text: string, params?: any[]) => {
 // Close all database connections gracefully
 export const closeConnections = async (): Promise<void> => {
   await pool.end();
-  await mongoose.connection.close();
-  redis.disconnect();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
+  if (redis) {
+    redis.disconnect();
+  }
   console.log('🔌 All database connections closed');
 };
