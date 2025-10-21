@@ -76,6 +76,7 @@ export const loginUser = async (
 ): Promise<AuthResponse> => {
   try {
     // Find user
+    logger.info(`Login attempt for email: ${email}`);
     const result = await pool.query(
       `SELECT id, email, password_hash, full_name, role, is_active
        FROM users
@@ -84,20 +85,26 @@ export const loginUser = async (
     );
 
     if (result.rows.length === 0) {
+      logger.error(`User not found: ${email}`);
       throw new Error('Invalid email or password');
     }
 
     const user = result.rows[0];
+    logger.info(`User found: ${email}, is_active: ${user.is_active}`);
 
     // Check if user is active
     if (!user.is_active) {
+      logger.error(`User is inactive: ${email}`);
       throw new Error('User account is deactivated');
     }
 
     // Verify password
+    logger.info(`Comparing password for user: ${email}`);
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    logger.info(`Password valid: ${isValidPassword}`);
 
     if (!isValidPassword) {
+      logger.error(`Password mismatch for user: ${email}`);
       throw new Error('Invalid email or password');
     }
 
