@@ -14,5 +14,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Start application directly with ts-node (no build step needed)
-CMD ["npx", "ts-node", "src/server.ts"]
+# Start application directly with ts-node (skip type checking)
+CMD ["npx", "ts-node", "--transpile-only", "src/server.ts"]
