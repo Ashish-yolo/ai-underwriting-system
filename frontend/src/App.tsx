@@ -54,6 +54,8 @@ const AppRouter = () => {
         <Route path="policies" element={<Policies />} />
         <Route path="policies/new" element={<PolicyBuilder />} />
         <Route path="policies/:id/edit" element={<PolicyBuilder />} />
+        <Route path="policy-builder" element={<PolicyBuilder />} />
+        <Route path="policy-builder/:id" element={<PolicyBuilder />} />
         <Route path="connectors" element={<Connectors />} />
         <Route path="manual-review" element={<ManualReview />} />
         <Route path="testing" element={<Testing />} />

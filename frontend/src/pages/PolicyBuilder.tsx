@@ -1,23 +1,255 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useCallback, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeftIcon,
+  DocumentCheckIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+} from '@heroicons/react/24/outline';
+
+import { usePolicyBuilderStore } from '../stores/policyBuilderStore';
+import { NodePalette } from '../components/policy-builder/NodePalette';
+import { CanvasWithProvider } from '../components/policy-builder/Canvas';
+import { PropertyPanel } from '../components/policy-builder/PropertyPanel';
+import { policyApi } from '../services/policyApi';
 
 const PolicyBuilder: React.FC = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const {
+    policyName,
+    policyDescription,
+    nodes,
+    edges,
+    validationErrors,
+    setPolicyMetadata,
+    loadPolicy,
+    clearPolicy,
+    validateWorkflow,
+  } = usePolicyBuilderStore();
+
+  // Load policy if editing
+  useEffect(() => {
+    const loadPolicyData = async () => {
+      if (id) {
+        try {
+          const policy = await policyApi.getPolicyById(id);
+          loadPolicy(policy);
+        } catch (error) {
+          console.warn('Failed to load policy (offline mode):', error);
+          // Don't show error in offline mode - just start with empty policy
+        }
+      } else {
+        clearPolicy();
+      }
+    };
+
+    loadPolicyData();
+  }, [id, loadPolicy, clearPolicy]);
+
+  const handleDragStart = useCallback((event: React.DragEvent, nodeType: string) => {
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
+  }, []);
+
+  const handleValidate = async () => {
+    const isValid = await validateWorkflow();
+    if (isValid) {
+      setSaveMessage({ type: 'success', text: 'Workflow is valid!' });
+    } else {
+      setSaveMessage({ type: 'error', text: `Found ${validationErrors.length} validation errors` });
+    }
+    setTimeout(() => setSaveMessage(null), 3000);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+
+    try {
+      // First validate
+      const isValid = await validateWorkflow();
+      if (!isValid) {
+        setSaveMessage({ type: 'error', text: 'Please fix validation errors before saving' });
+        setIsSaving(false);
+        setTimeout(() => setSaveMessage(null), 3000);
+        return;
+      }
+
+      // Build the policy object
+      const policyData = {
+        name: policyName,
+        description: policyDescription,
+        workflow: {
+          nodes,
+          edges,
+        },
+      };
+
+      // Call API to save policy
+      if (id) {
+        await policyApi.updatePolicy(id, policyData);
+        setSaveMessage({ type: 'success', text: 'Policy updated successfully!' });
+      } else {
+        const newPolicy = await policyApi.createPolicy(policyData);
+        setSaveMessage({ type: 'success', text: 'Policy created successfully!' });
+        // Navigate to edit mode with the new ID
+        navigate(`/policy-builder/${newPolicy.id}`, { replace: true });
+      }
+
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      console.error('Error saving policy:', error);
+      setSaveMessage({ type: 'error', text: 'Failed to save policy' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePublish = async () => {
+    if (!id) {
+      setSaveMessage({ type: 'error', text: 'Please save the policy first' });
+      setTimeout(() => setSaveMessage(null), 3000);
+      return;
+    }
+
+    try {
+      await policyApi.publishPolicy(id);
+      setSaveMessage({ type: 'success', text: 'Policy published successfully!' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    } catch (error) {
+      console.error('Error publishing policy:', error);
+      setSaveMessage({ type: 'error', text: 'Failed to publish policy' });
+      setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">
-        {id ? 'Edit Policy' : 'Create New Policy'}
-      </h1>
+    <div className="h-screen flex flex-col">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate('/policies')}
+              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ArrowLeftIcon className="w-5 h-5" />
+            </button>
 
-      <div className="card">
-        <p className="text-gray-600">
-          Visual Policy Builder with React Flow will be implemented here.
-        </p>
-        <p className="text-sm text-gray-500 mt-4">
-          This will allow drag-and-drop workflow creation with nodes for:
-          Start, Data Source, Condition, Calculation, Score, Decision, API Call, DB Query, and End nodes.
-        </p>
+            <div>
+              <input
+                type="text"
+                value={policyName}
+                onChange={(e) => setPolicyMetadata({ name: e.target.value })}
+                className="text-2xl font-bold text-gray-900 border-0 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-2 py-1"
+              />
+              <input
+                type="text"
+                value={policyDescription}
+                onChange={(e) => setPolicyMetadata({ description: e.target.value })}
+                placeholder="Add description..."
+                className="block text-sm text-gray-600 border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-2 py-1 mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {saveMessage && (
+              <div
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  saveMessage.type === 'success'
+                    ? 'bg-green-50 text-green-800'
+                    : 'bg-red-50 text-red-800'
+                }`}
+              >
+                {saveMessage.type === 'success' ? (
+                  <CheckCircleIcon className="w-5 h-5" />
+                ) : (
+                  <ExclamationTriangleIcon className="w-5 h-5" />
+                )}
+                <span className="text-sm font-medium">{saveMessage.text}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleValidate}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <DocumentCheckIcon className="w-5 h-5" />
+              Validate
+            </button>
+
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </button>
+
+            <button
+              onClick={handlePublish}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Publish
+            </button>
+          </div>
+        </div>
+
+        {/* Validation Errors */}
+        {validationErrors.length > 0 && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <ExclamationTriangleIcon className="w-5 h-5 text-red-600" />
+              <h3 className="text-sm font-semibold text-red-900">
+                Validation Issues ({validationErrors.length})
+              </h3>
+            </div>
+            <ul className="space-y-1">
+              {validationErrors.slice(0, 5).map((error, index) => (
+                <li key={index} className="text-sm text-red-800">
+                  • {error.message}
+                </li>
+              ))}
+              {validationErrors.length > 5 && (
+                <li className="text-sm text-red-600 font-medium">
+                  + {validationErrors.length - 5} more issues
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Main Workspace */}
+      <div className="flex-1 flex overflow-hidden">
+        <NodePalette onDragStart={handleDragStart} />
+        <CanvasWithProvider />
+        <PropertyPanel />
+      </div>
+
+      {/* Footer Stats */}
+      <div className="bg-white border-t border-gray-200 px-6 py-2">
+        <div className="flex items-center justify-between text-sm text-gray-600">
+          <div className="flex items-center gap-6">
+            <span>{nodes.length} nodes</span>
+            <span>{edges.length} connections</span>
+            <span>
+              {nodes.filter(n => n.type === 'start').length > 0 ? (
+                <span className="text-green-600">✓ Has start node</span>
+              ) : (
+                <span className="text-red-600">✗ Missing start node</span>
+              )}
+            </span>
+          </div>
+          <div className="text-xs text-gray-500">
+            {id ? `Editing Policy ${id}` : 'New Policy'}
+          </div>
+        </div>
       </div>
     </div>
   );

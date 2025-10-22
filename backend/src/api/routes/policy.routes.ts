@@ -84,7 +84,7 @@ router.get('/', authenticate, async (req: Request, res: Response) => {
     if (status) filters.status = status;
     if (product_type) filters.product_type = product_type;
 
-    const policies = await getAllPolicies(filters, Number(page), Number(limit));
+    const policies = await getAllPolicies(filters);
 
     // Get total count
     let countQuery = 'SELECT COUNT(*) FROM policies WHERE 1=1';
@@ -138,18 +138,19 @@ router.get('/:id', authenticate, async (req: Request, res: Response) => {
 
     // Get policy versions
     const versions = await pool.query(
-      `SELECT id, version, created_at, created_by, change_summary
+      `SELECT id, version, created_at, created_by, change_notes
        FROM policy_versions
        WHERE policy_id = $1
        ORDER BY version DESC`,
       [id]
     );
 
-    policy.versions = versions.rows;
+    // Add versions to response (not modifying policy object directly)
+    const policyWithVersions = { ...policy, versions: versions.rows };
 
     res.json({
       success: true,
-      data: policy,
+      data: policyWithVersions,
     });
   } catch (error: any) {
     logger.error(`Get policy error: ${error.message}`);
@@ -179,9 +180,12 @@ router.put('/:id', authenticate, requireRole(['admin', 'policy_creator']), async
       }
     }
 
-    const policy = await updatePolicy(id, updates, userId);
+    await updatePolicy(id, updates);
 
-    if (!policy) {
+    // Get updated policy
+    const updatedPolicy = await getPolicyById(id);
+
+    if (!updatedPolicy) {
       return res.status(404).json({
         success: false,
         error: 'Policy not found',
@@ -200,7 +204,7 @@ router.put('/:id', authenticate, requireRole(['admin', 'policy_creator']), async
     res.json({
       success: true,
       message: 'Policy updated successfully',
-      data: policy,
+      data: updatedPolicy,
     });
   } catch (error: any) {
     logger.error(`Update policy error: ${error.message}`);
@@ -247,7 +251,10 @@ router.post('/:id/activate', authenticate, requireRole(['admin']), async (req: R
     const { id } = req.params;
     const userId = req.user!.id;
 
-    const policy = await activatePolicy(id);
+    await activatePolicy(id);
+
+    // Get the activated policy
+    const policy = await getPolicyById(id);
 
     if (!policy) {
       return res.status(404).json({
@@ -293,7 +300,7 @@ router.post('/:id/clone', authenticate, requireRole(['admin', 'policy_creator'])
       });
     }
 
-    const clonedPolicy = await clonePolicy(id, name, description, userId);
+    const clonedPolicy = await clonePolicy(id, name, userId);
 
     if (!clonedPolicy) {
       return res.status(404).json({

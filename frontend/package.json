@@ -11,21 +11,22 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@tanstack/react-query": "^5.14.6",
+    "axios": "^1.6.2",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.0.6",
+    "lucide-react": "^0.303.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.21.1",
-    "react-flow-renderer": "^10.3.17",
-    "reactflow": "^11.10.3",
-    "axios": "^1.6.2",
-    "@tanstack/react-query": "^5.14.6",
-    "zustand": "^4.4.7",
-    "date-fns": "^3.0.6",
-    "recharts": "^2.10.3",
-    "lucide-react": "^0.303.0",
     "react-dropzone": "^14.2.3",
+    "react-flow-renderer": "^10.3.17",
     "react-hot-toast": "^2.4.1",
-    "clsx": "^2.1.0",
-    "tailwind-merge": "^2.2.0"
+    "react-router-dom": "^6.21.1",
+    "reactflow": "^11.11.4",
+    "recharts": "^2.10.3",
+    "tailwind-merge": "^2.2.0",
+    "zustand": "^4.5.7"
   },
   "devDependencies": {
     "@types/react": "^18.2.45",
