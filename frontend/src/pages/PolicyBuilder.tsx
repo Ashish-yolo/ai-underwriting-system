@@ -5,6 +5,7 @@ import {
   DocumentCheckIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline';
 
 import { usePolicyBuilderStore } from '../stores/policyBuilderStore';
@@ -12,6 +13,8 @@ import { NodePalette } from '../components/policy-builder/NodePalette';
 import { CanvasWithProvider } from '../components/policy-builder/Canvas';
 import { PropertyPanel } from '../components/policy-builder/PropertyPanel';
 import { StrategyConfigModal } from '../components/policy-builder/modals/StrategyConfigModal';
+import { TestModal } from '../components/policy-builder/modals/TestModal';
+import { BulkTestProgressModal } from '../components/policy-builder/modals/BulkTestProgressModal';
 import { policyApi } from '../services/policyApi';
 
 const PolicyBuilder: React.FC = () => {
@@ -19,6 +22,15 @@ const PolicyBuilder: React.FC = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [bulkTestProgress, setBulkTestProgress] = useState({
+    isRunning: false,
+    progress: 0,
+    total: 0,
+    processed: 0,
+    successCount: 0,
+    failureCount: 0,
+    currentApplication: '',
+  });
 
   const {
     policyName,
@@ -28,12 +40,17 @@ const PolicyBuilder: React.FC = () => {
     validationErrors,
     selectedNode,
     isConfigModalOpen,
+    isTestModalOpen,
     setPolicyMetadata,
     loadPolicy,
     clearPolicy,
     validateWorkflow,
     closeConfigModal,
     updateNodeData,
+    openTestModal,
+    closeTestModal,
+    clearTestResults,
+    testPolicy,
   } = usePolicyBuilderStore();
 
   // Load policy if editing
@@ -105,10 +122,11 @@ const PolicyBuilder: React.FC = () => {
       }
 
       setTimeout(() => setSaveMessage(null), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving policy:', error);
-      setSaveMessage({ type: 'error', text: 'Failed to save policy' });
-      setTimeout(() => setSaveMessage(null), 3000);
+      const errorMessage = error.message || 'Failed to save policy - backend may be offline';
+      setSaveMessage({ type: 'error', text: errorMessage });
+      setTimeout(() => setSaveMessage(null), 5000);
     } finally {
       setIsSaving(false);
     }
@@ -125,10 +143,11 @@ const PolicyBuilder: React.FC = () => {
       await policyApi.publishPolicy(id);
       setSaveMessage({ type: 'success', text: 'Policy published successfully!' });
       setTimeout(() => setSaveMessage(null), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error publishing policy:', error);
-      setSaveMessage({ type: 'error', text: 'Failed to publish policy' });
-      setTimeout(() => setSaveMessage(null), 3000);
+      const errorMessage = error.message || 'Failed to publish policy - backend may be offline';
+      setSaveMessage({ type: 'error', text: errorMessage });
+      setTimeout(() => setSaveMessage(null), 5000);
     }
   };
 
@@ -141,6 +160,104 @@ const PolicyBuilder: React.FC = () => {
       });
       closeConfigModal();
     }
+  };
+
+  const handleRunSingleTest = async (jsonData: any) => {
+    clearTestResults();
+    await testPolicy(jsonData);
+    // Keep modal open to show results
+  };
+
+  const handleRunBulkTest = async (file: File) => {
+    // For now, close the test modal and show progress
+    closeTestModal();
+
+    // Parse Excel file (simplified - would use a library like xlsx in production)
+    // This is a placeholder - actual implementation would parse the Excel file
+    console.log('Bulk test file:', file.name);
+    const applications = [
+      { name: 'App1', data: { credit_score: 720 } },
+      { name: 'App2', data: { credit_score: 650 } },
+      // ... more applications from Excel
+    ];
+
+    setBulkTestProgress({
+      isRunning: true,
+      progress: 0,
+      total: applications.length,
+      processed: 0,
+      successCount: 0,
+      failureCount: 0,
+      currentApplication: '',
+    });
+
+    const results = [];
+
+    for (let i = 0; i < applications.length; i++) {
+      const app = applications[i];
+
+      setBulkTestProgress(prev => ({
+        ...prev,
+        currentApplication: app.name,
+        processed: i,
+        progress: (i / applications.length) * 100,
+      }));
+
+      try {
+        await testPolicy(app.data);
+        results.push({ ...app, success: true });
+
+        setBulkTestProgress(prev => ({
+          ...prev,
+          successCount: prev.successCount + 1,
+        }));
+      } catch (error) {
+        results.push({ ...app, success: false, error });
+
+        setBulkTestProgress(prev => ({
+          ...prev,
+          failureCount: prev.failureCount + 1,
+        }));
+      }
+    }
+
+    // Final update
+    setBulkTestProgress(prev => ({
+      ...prev,
+      processed: applications.length,
+      progress: 100,
+    }));
+
+    // Auto-download results Excel
+    downloadBulkTestResults(results);
+
+    // Close progress modal after 2 seconds
+    setTimeout(() => {
+      setBulkTestProgress({
+        isRunning: false,
+        progress: 0,
+        total: 0,
+        processed: 0,
+        successCount: 0,
+        failureCount: 0,
+        currentApplication: '',
+      });
+    }, 2000);
+  };
+
+  const downloadBulkTestResults = (results: any[]) => {
+    // Create CSV content (simplified - would use xlsx library in production)
+    const csvContent = 'data:text/csv;charset=utf-8,' +
+      'Application,Success,Decision,Error\n' +
+      results.map(r => `${r.name},${r.success},${r.decision || 'N/A'},${r.error || ''}`).join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `bulk_test_results_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -197,6 +314,14 @@ const PolicyBuilder: React.FC = () => {
             >
               <DocumentCheckIcon className="w-5 h-5" />
               Validate
+            </button>
+
+            <button
+              onClick={openTestModal}
+              className="flex items-center gap-2 px-4 py-2 border border-purple-300 text-purple-700 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors"
+            >
+              <BeakerIcon className="w-5 h-5" />
+              Test
             </button>
 
             <button
@@ -282,6 +407,25 @@ const PolicyBuilder: React.FC = () => {
           onSave={handleSaveStrategy}
         />
       )}
+
+      {/* Test Modal */}
+      <TestModal
+        isOpen={isTestModalOpen}
+        onClose={closeTestModal}
+        onRunSingleTest={handleRunSingleTest}
+        onRunBulkTest={handleRunBulkTest}
+      />
+
+      {/* Bulk Test Progress Modal */}
+      <BulkTestProgressModal
+        isOpen={bulkTestProgress.isRunning}
+        progress={bulkTestProgress.progress}
+        total={bulkTestProgress.total}
+        processed={bulkTestProgress.processed}
+        successCount={bulkTestProgress.successCount}
+        failureCount={bulkTestProgress.failureCount}
+        currentApplication={bulkTestProgress.currentApplication}
+      />
     </div>
   );
 };

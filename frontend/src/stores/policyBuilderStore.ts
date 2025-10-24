@@ -50,6 +50,10 @@ export interface PolicyBuilderState {
   selectNode: (node: Node<StrategyNodeData> | null) => void;
   openConfigModal: (nodeId: string) => void;
   closeConfigModal: () => void;
+  openTestModal: () => void;
+  closeTestModal: () => void;
+  clearTestResults: () => void;
+  setTestResultOnNode: (nodeId: string, result: 'approved' | 'reject' | 'manual_check' | null) => void;
 
   setPolicyMetadata: (metadata: { name?: string; description?: string }) => void;
   loadPolicy: (policyData: any) => void;
@@ -185,6 +189,35 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
     set({
       isConfigModalOpen: false,
       selectedNode: null,
+    });
+  },
+
+  openTestModal: () => {
+    set({ isTestModalOpen: true });
+  },
+
+  closeTestModal: () => {
+    set({ isTestModalOpen: false });
+  },
+
+  clearTestResults: () => {
+    // Clear test results from all nodes
+    set({
+      testResults: null,
+      nodes: get().nodes.map(node => ({
+        ...node,
+        data: { ...node.data, testResult: null },
+      })),
+    });
+  },
+
+  setTestResultOnNode: (nodeId, result) => {
+    set({
+      nodes: get().nodes.map(node =>
+        node.id === nodeId
+          ? { ...node, data: { ...node.data, testResult: result } }
+          : node
+      ),
     });
   },
 
@@ -377,6 +410,23 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
       });
 
       allDecisions.push(nodeDecision);
+
+      // Set visual feedback on node
+      const visualResult = nodeDecision === 'Approved' ? 'approved'
+        : nodeDecision === 'Reject' ? 'reject'
+        : 'manual_check';
+
+      // Update node immediately with test result
+      set({
+        nodes: get().nodes.map(n =>
+          n.id === node.id
+            ? { ...n, data: { ...n.data, testResult: visualResult } }
+            : n
+        ),
+      });
+
+      // Add delay for visual effect
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
 
     // Voting algorithm: Reject > Manual Check > Approved
