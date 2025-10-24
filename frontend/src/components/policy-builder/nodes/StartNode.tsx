@@ -33,9 +33,9 @@ export const StartNode: React.FC<NodeProps> = ({ selected }) => {
         type="source"
         position={Position.Bottom}
         id="start-output"
-        className="w-3 h-3 !bg-green-600 border-2 border-white hover:scale-150 transition-transform"
+        className="!w-4 !h-4 !bg-green-600 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
         style={{
-          bottom: -6,
+          bottom: -8,
         }}
       />
     </div>

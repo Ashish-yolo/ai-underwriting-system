@@ -80,9 +80,9 @@ export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
         type="target"
         position={Position.Top}
         id="strategy-input"
-        className="w-3 h-3 !bg-green-500 border-2 border-white hover:scale-150 transition-transform"
+        className="!w-4 !h-4 !bg-blue-500 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
         style={{
-          top: -6,
+          top: -8,
         }}
       />
 
@@ -151,9 +151,9 @@ export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
         type="source"
         position={Position.Bottom}
         id="strategy-output"
-        className="w-3 h-3 !bg-blue-600 border-2 border-white hover:scale-150 transition-transform"
+        className="!w-4 !h-4 !bg-blue-600 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
         style={{
-          bottom: -6,
+          bottom: -8,
         }}
       />
     </div>
