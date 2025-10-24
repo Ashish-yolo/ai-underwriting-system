@@ -75,14 +75,32 @@ export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
         minHeight: '80px',
       }}
     >
-      {/* Input handle (top center) */}
+      {/* Input handles */}
       <Handle
         type="target"
         position={Position.Top}
-        id="strategy-input"
+        id="strategy-input-top"
         className="!w-4 !h-4 !bg-blue-500 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
         style={{
           top: -8,
+        }}
+      />
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="strategy-input-left"
+        className="!w-4 !h-4 !bg-blue-500 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
+        style={{
+          left: -8,
+        }}
+      />
+      <Handle
+        type="target"
+        position={Position.Right}
+        id="strategy-input-right"
+        className="!w-4 !h-4 !bg-blue-500 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
+        style={{
+          right: -8,
         }}
       />
 
@@ -146,14 +164,32 @@ export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
         )}
       </div>
 
-      {/* Output handle (bottom center) */}
+      {/* Output handles */}
       <Handle
         type="source"
         position={Position.Bottom}
-        id="strategy-output"
+        id="strategy-output-bottom"
         className="!w-4 !h-4 !bg-blue-600 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
         style={{
           bottom: -8,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="strategy-output-left"
+        className="!w-4 !h-4 !bg-blue-600 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
+        style={{
+          left: -8,
+        }}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="strategy-output-right"
+        className="!w-4 !h-4 !bg-blue-600 !border-3 !border-white hover:!scale-150 transition-transform cursor-crosshair"
+        style={{
+          right: -8,
         }}
       />
     </div>
