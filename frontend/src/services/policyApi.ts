@@ -65,7 +65,8 @@ export const policyApi = {
   async createPolicy(policyData: {
     name: string;
     description: string;
-    workflow: { nodes: any[]; edges: any[] };
+    product_type?: string;
+    workflow_json: { nodes: any[]; edges: any[] };
   }): Promise<Policy> {
     const response = await fetch(`${API_BASE_URL}/policies`, {
       method: 'POST',
@@ -89,7 +90,8 @@ export const policyApi = {
     policyData: {
       name?: string;
       description?: string;
-      workflow?: { nodes: any[]; edges: any[] };
+      product_type?: string;
+      workflow_json?: { nodes: any[]; edges: any[] };
     }
   ): Promise<Policy> {
     const response = await fetch(`${API_BASE_URL}/policies/${id}`, {

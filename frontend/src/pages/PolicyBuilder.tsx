@@ -104,7 +104,8 @@ const PolicyBuilder: React.FC = () => {
       const policyData = {
         name: policyName,
         description: policyDescription,
-        workflow: {
+        product_type: 'loan', // Default product type
+        workflow_json: {
           nodes,
           edges,
         },
