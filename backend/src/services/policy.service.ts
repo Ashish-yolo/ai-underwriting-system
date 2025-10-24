@@ -61,7 +61,10 @@ export const getPolicyById = async (policyId: string): Promise<Policy | null> =>
     }
 
     const policy = result.rows[0];
-    policy.workflow_json = JSON.parse(policy.workflow_json);
+    // Parse workflow_json if it's a string, otherwise use as-is
+    if (typeof policy.workflow_json === 'string') {
+      policy.workflow_json = JSON.parse(policy.workflow_json);
+    }
 
     return policy;
   } catch (error) {
@@ -97,7 +100,9 @@ export const getAllPolicies = async (filters?: {
 
     return result.rows.map(policy => ({
       ...policy,
-      workflow_json: JSON.parse(policy.workflow_json),
+      workflow_json: typeof policy.workflow_json === 'string'
+        ? JSON.parse(policy.workflow_json)
+        : policy.workflow_json,
     }));
   } catch (error) {
     logger.error(`Get all policies error: ${error.message}`);
@@ -215,7 +220,9 @@ export const getPolicyVersions = async (policyId: string): Promise<any[]> => {
 
     return result.rows.map(version => ({
       ...version,
-      workflow_json: JSON.parse(version.workflow_json),
+      workflow_json: typeof version.workflow_json === 'string'
+        ? JSON.parse(version.workflow_json)
+        : version.workflow_json,
     }));
   } catch (error) {
     logger.error(`Get policy versions error: ${error.message}`);
