@@ -25,6 +25,7 @@ export const Canvas: React.FC = () => {
     selectNode,
     addNode,
     initializeCanvas,
+    openConfigModal,
   } = usePolicyBuilderStore();
 
   // Initialize canvas with Start node on mount
@@ -66,9 +67,15 @@ export const Canvas: React.FC = () => {
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: any) => {
-      selectNode(node);
+      // For Strategy nodes, open config modal directly
+      if (node.type === 'strategy') {
+        openConfigModal(node.id);
+      } else {
+        // For other nodes (like START), show in PropertyPanel
+        selectNode(node);
+      }
     },
-    [selectNode]
+    [openConfigModal, selectNode]
   );
 
   const onPaneClick = useCallback(() => {

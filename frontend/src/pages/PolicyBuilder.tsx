@@ -132,9 +132,10 @@ const PolicyBuilder: React.FC = () => {
     }
   };
 
-  const handleSaveStrategy = (conditions: any[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => {
+  const handleSaveStrategy = (nodeName: string, conditions: any[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => {
     if (selectedNode) {
       updateNodeData(selectedNode.id, {
+        label: nodeName,
         conditions,
         defaultDecision,
       });

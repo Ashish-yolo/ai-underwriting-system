@@ -17,7 +17,7 @@ interface StrategyConfigModalProps {
   conditions: Condition[];
   defaultDecision: 'Approved' | 'Reject' | 'Manual Check';
   onClose: () => void;
-  onSave: (conditions: Condition[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => void;
+  onSave: (nodeName: string, conditions: Condition[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => void;
 }
 
 export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
@@ -83,7 +83,8 @@ export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
       return;
     }
 
-    onSave(conditions, defaultDecision);
+    // Save with node name
+    onSave(tempName, conditions, defaultDecision);
   };
 
   return (

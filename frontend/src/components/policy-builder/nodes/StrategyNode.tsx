@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
+import { XMarkIcon } from '@heroicons/react/24/solid';
+import { usePolicyBuilderStore } from '../../../stores/policyBuilderStore';
 
 interface StrategyNodeData {
   label: string;
@@ -10,9 +12,28 @@ interface StrategyNodeData {
 export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
   data,
   selected,
+  id,
 }) => {
   const hasConditions = data.conditions && data.conditions.length > 0;
   const testResult = data.testResult;
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const deleteNode = usePolicyBuilderStore(state => state.deleteNode);
+
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(true);
+  };
+
+  const handleConfirmDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteNode(id);
+    setShowDeleteConfirm(false);
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowDeleteConfirm(false);
+  };
 
   // Determine node styling based on state
   const getNodeStyle = () => {
@@ -65,6 +86,38 @@ export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
         }}
       />
 
+      {/* Delete button */}
+      {!showDeleteConfirm && (
+        <button
+          onClick={handleDeleteClick}
+          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center transition-colors shadow-md z-10"
+          title="Delete node"
+        >
+          <XMarkIcon className="w-4 h-4" />
+        </button>
+      )}
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-white border-2 border-red-500 rounded-lg shadow-lg p-3 z-20 min-w-[200px]">
+          <p className="text-xs text-gray-900 font-semibold mb-2">Delete this strategy?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleConfirmDelete}
+              className="flex-1 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded transition-colors"
+            >
+              Delete
+            </button>
+            <button
+              onClick={handleCancelDelete}
+              className="flex-1 px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 text-xs rounded transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Node content */}
       <div className="flex flex-col gap-2">
         {/* Line 1: Node name */}
@@ -86,8 +139,8 @@ export const StrategyNode: React.FC<NodeProps<StrategyNodeData>> = ({
         </div>
 
         {/* Condition count badge */}
-        {hasConditions && (
-          <div className="absolute -top-2 -right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+        {hasConditions && !showDeleteConfirm && (
+          <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
             {data.conditions?.length}
           </div>
         )}
