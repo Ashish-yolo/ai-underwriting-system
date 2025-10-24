@@ -15,7 +15,7 @@ interface Policy {
 }
 
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('token');
+  return localStorage.getItem('auth_token');
 };
 
 const authHeaders = (): HeadersInit => {
