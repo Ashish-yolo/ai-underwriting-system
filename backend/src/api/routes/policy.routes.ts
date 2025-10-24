@@ -255,6 +255,65 @@ router.delete('/:id', authenticate, requireRole(['admin']), async (req: Request,
 });
 
 /**
+ * Publish policy (validate with strict mode, then activate)
+ * POST /api/policies/:id/publish
+ */
+router.post('/:id/publish', authenticate, requireRole(['admin', 'policy_creator']), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user!.id;
+
+    // Get policy first
+    const policy = await getPolicyById(id);
+
+    if (!policy) {
+      return res.status(404).json({
+        success: false,
+        error: 'Policy not found',
+      });
+    }
+
+    // Validate with STRICT mode (requires decision nodes, etc.)
+    const validation = await validatePolicy(policy.workflow_json, true);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: 'Policy cannot be published. Please fix validation errors.',
+        details: validation.errors,
+      });
+    }
+
+    // Activate the policy
+    await activatePolicy(id);
+
+    // Get the activated policy
+    const activatedPolicy = await getPolicyById(id);
+
+    // Log audit (optional - skip if table doesn't exist)
+    try {
+      await pool.query(
+        `INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details)
+         VALUES ($1, 'publish_policy', 'policy', $2, $3)`,
+        [userId, id, JSON.stringify({ published: true })]
+      );
+    } catch (auditError: any) {
+      logger.warn(`Audit logging failed: ${auditError.message}`);
+    }
+
+    logger.info(`Policy published: ${id} by user ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'Policy published successfully',
+      data: activatedPolicy,
+    });
+  } catch (error: any) {
+    logger.error(`Publish policy error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Activate policy
  * POST /api/policies/:id/activate
  */
