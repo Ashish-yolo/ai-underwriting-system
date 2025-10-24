@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useEffect } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -24,7 +24,13 @@ export const Canvas: React.FC = () => {
     onConnect,
     selectNode,
     addNode,
+    initializeCanvas,
   } = usePolicyBuilderStore();
+
+  // Initialize canvas with Start node on mount
+  useEffect(() => {
+    initializeCanvas();
+  }, [initializeCanvas]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -92,23 +98,9 @@ export const Canvas: React.FC = () => {
           nodeStrokeColor={(node) => {
             switch (node.type) {
               case 'start':
-                return '#10b981';
-              case 'condition':
-                return '#3b82f6';
-              case 'score':
-                return '#a855f7';
-              case 'apiCall':
-                return '#6366f1';
-              case 'rule':
-                return '#f59e0b';
-              case 'decision':
-                return '#10b981';
-              case 'manualReview':
-                return '#f97316';
-              case 'dataTransform':
-                return '#14b8a6';
-              case 'end':
-                return '#ef4444';
+                return '#16a34a'; // Green for START
+              case 'strategy':
+                return '#6b7280';
               default:
                 return '#9ca3af';
             }
@@ -116,25 +108,11 @@ export const Canvas: React.FC = () => {
           nodeColor={(node) => {
             switch (node.type) {
               case 'start':
-                return '#d1fae5';
-              case 'condition':
-                return '#dbeafe';
-              case 'score':
-                return '#f3e8ff';
-              case 'apiCall':
-                return '#e0e7ff';
-              case 'rule':
-                return '#fef3c7';
-              case 'decision':
-                return '#d1fae5';
-              case 'manualReview':
-                return '#ffedd5';
-              case 'dataTransform':
-                return '#ccfbf1';
-              case 'end':
-                return '#fee2e2';
-              default:
+                return '#dcfce7'; // Light green for START
+              case 'strategy':
                 return '#f3f4f6';
+              default:
+                return '#f9fafb';
             }
           }}
           nodeBorderRadius={8}

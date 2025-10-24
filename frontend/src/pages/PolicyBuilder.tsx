@@ -11,6 +11,7 @@ import { usePolicyBuilderStore } from '../stores/policyBuilderStore';
 import { NodePalette } from '../components/policy-builder/NodePalette';
 import { CanvasWithProvider } from '../components/policy-builder/Canvas';
 import { PropertyPanel } from '../components/policy-builder/PropertyPanel';
+import { StrategyConfigModal } from '../components/policy-builder/modals/StrategyConfigModal';
 import { policyApi } from '../services/policyApi';
 
 const PolicyBuilder: React.FC = () => {
@@ -25,10 +26,14 @@ const PolicyBuilder: React.FC = () => {
     nodes,
     edges,
     validationErrors,
+    selectedNode,
+    isConfigModalOpen,
     setPolicyMetadata,
     loadPolicy,
     clearPolicy,
     validateWorkflow,
+    closeConfigModal,
+    updateNodeData,
   } = usePolicyBuilderStore();
 
   // Load policy if editing
@@ -124,6 +129,16 @@ const PolicyBuilder: React.FC = () => {
       console.error('Error publishing policy:', error);
       setSaveMessage({ type: 'error', text: 'Failed to publish policy' });
       setTimeout(() => setSaveMessage(null), 3000);
+    }
+  };
+
+  const handleSaveStrategy = (conditions: any[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => {
+    if (selectedNode) {
+      updateNodeData(selectedNode.id, {
+        conditions,
+        defaultDecision,
+      });
+      closeConfigModal();
     }
   };
 
@@ -239,11 +254,14 @@ const PolicyBuilder: React.FC = () => {
             <span>{nodes.length} nodes</span>
             <span>{edges.length} connections</span>
             <span>
-              {nodes.filter(n => n.type === 'start').length > 0 ? (
-                <span className="text-green-600">✓ Has start node</span>
+              {nodes.filter(n => n.type === 'start' || n.id === 'start-node').length > 0 ? (
+                <span className="text-green-600">✓ Has START node</span>
               ) : (
-                <span className="text-red-600">✗ Missing start node</span>
+                <span className="text-red-600">✗ Missing START node</span>
               )}
+            </span>
+            <span className="text-gray-500 text-xs">
+              Last node determines final decision
             </span>
           </div>
           <div className="text-xs text-gray-500">
@@ -251,6 +269,18 @@ const PolicyBuilder: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Strategy Configuration Modal */}
+      {selectedNode && selectedNode.type === 'strategy' && (
+        <StrategyConfigModal
+          isOpen={isConfigModalOpen}
+          nodeName={selectedNode.data?.label || 'Strategy'}
+          conditions={selectedNode.data?.conditions || []}
+          defaultDecision={selectedNode.data?.defaultDecision || 'Manual Check'}
+          onClose={closeConfigModal}
+          onSave={handleSaveStrategy}
+        />
+      )}
     </div>
   );
 };

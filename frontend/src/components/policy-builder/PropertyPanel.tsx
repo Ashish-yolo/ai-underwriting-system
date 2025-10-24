@@ -3,9 +3,9 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { usePolicyBuilderStore } from '../../stores/policyBuilderStore';
 
 export const PropertyPanel: React.FC = () => {
-  const { selectedNode, isPanelOpen, selectNode, updateNodeData, deleteNode } = usePolicyBuilderStore();
+  const { selectedNode, selectNode, openConfigModal, deleteNode } = usePolicyBuilderStore();
 
-  if (!isPanelOpen || !selectedNode) {
+  if (!selectedNode) {
     return null;
   }
 
@@ -19,390 +19,9 @@ export const PropertyPanel: React.FC = () => {
     }
   };
 
-  const handleChange = (field: string, value: any) => {
-    if (selectedNode) {
-      updateNodeData(selectedNode.id, { [field]: value });
-    }
-  };
-
-  const renderNodeConfig = () => {
-    if (!selectedNode) return null;
-
-    switch (selectedNode.type) {
-      case 'start':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      case 'condition':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Field *
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.field || ''}
-                onChange={(e) => handleChange('field', e.target.value)}
-                placeholder="e.g., applicant.creditScore"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Operator *
-              </label>
-              <select
-                value={selectedNode.data.operator || '=='}
-                onChange={(e) => handleChange('operator', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="==">Equal (==)</option>
-                <option value="!=">Not Equal (!=)</option>
-                <option value=">">Greater Than (&gt;)</option>
-                <option value="<">Less Than (&lt;)</option>
-                <option value=">=">Greater or Equal (&gt;=)</option>
-                <option value="<=">Less or Equal (&lt;=)</option>
-                <option value="in">In List</option>
-                <option value="not_in">Not In List</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Value *
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.value || ''}
-                onChange={(e) => handleChange('value', e.target.value)}
-                placeholder="e.g., 650"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      case 'score':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Field *
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.field || ''}
-                onChange={(e) => handleChange('field', e.target.value)}
-                placeholder="e.g., riskScore"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Calculation
-              </label>
-              <select
-                value={selectedNode.data.calculation || 'add'}
-                onChange={(e) => handleChange('calculation', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="add">Add</option>
-                <option value="subtract">Subtract</option>
-                <option value="multiply">Multiply</option>
-                <option value="set">Set</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Points *
-              </label>
-              <input
-                type="number"
-                value={selectedNode.data.points || 0}
-                onChange={(e) => handleChange('points', parseFloat(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      case 'apiCall':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Method
-              </label>
-              <select
-                value={selectedNode.data.method || 'GET'}
-                onChange={(e) => handleChange('method', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="GET">GET</option>
-                <option value="POST">POST</option>
-                <option value="PUT">PUT</option>
-                <option value="PATCH">PATCH</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL *
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.url || ''}
-                onChange={(e) => handleChange('url', e.target.value)}
-                placeholder="https://api.example.com/endpoint"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      case 'decision':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Decision Type *
-              </label>
-              <select
-                value={selectedNode.data.decisionType || 'approve'}
-                onChange={(e) => handleChange('decisionType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="approve">Approve</option>
-                <option value="reject">Reject</option>
-                <option value="manual_review">Manual Review</option>
-                <option value="conditional">Conditional</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reason Code
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.reasonCode || ''}
-                onChange={(e) => handleChange('reasonCode', e.target.value)}
-                placeholder="e.g., APPR001"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      case 'manualReview':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Priority
-              </label>
-              <select
-                value={selectedNode.data.priority || 'medium'}
-                onChange={(e) => handleChange('priority', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Assign To
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.assignTo || ''}
-                onChange={(e) => handleChange('assignTo', e.target.value)}
-                placeholder="Team or user"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      case 'dataTransform':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Transform Type
-              </label>
-              <select
-                value={selectedNode.data.transformType || 'map'}
-                onChange={(e) => handleChange('transformType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="map">Map</option>
-                <option value="filter">Filter</option>
-                <option value="reduce">Reduce</option>
-                <option value="jsonata">JSONata</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Expression
-              </label>
-              <textarea
-                value={selectedNode.data.expression || ''}
-                onChange={(e) => handleChange('expression', e.target.value)}
-                placeholder="Enter transformation expression"
-                rows={4}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
-              />
-            </div>
-          </div>
-        );
-
-      case 'rule':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Rule Type
-              </label>
-              <select
-                value={selectedNode.data.ruleType || 'threshold'}
-                onChange={(e) => handleChange('ruleType', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="threshold">Threshold</option>
-                <option value="range">Range</option>
-                <option value="lookup">Lookup Table</option>
-                <option value="composite">Composite</option>
-              </select>
-            </div>
-          </div>
-        );
-
-      case 'end':
-        return (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Label
-              </label>
-              <input
-                type="text"
-                value={selectedNode.data.label || ''}
-                onChange={(e) => handleChange('label', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-        );
-
-      default:
-        return <p className="text-gray-500">No configuration available</p>;
+  const handleConfigure = () => {
+    if (selectedNode && selectedNode.type === 'strategy') {
+      openConfigModal(selectedNode.id);
     }
   };
 
@@ -418,28 +37,66 @@ export const PropertyPanel: React.FC = () => {
         </button>
       </div>
 
-      {selectedNode && (
-        <>
-          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-            <div className="text-xs text-gray-500 mb-1">Node Type</div>
-            <div className="font-medium text-gray-900 capitalize">
-              {selectedNode.type}
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <div className="text-xs text-gray-500 mb-1">Node Type</div>
+        <div className="font-medium text-gray-900 capitalize">
+          {selectedNode.type}
+        </div>
+        <div className="text-xs text-gray-500 mt-2">Node ID</div>
+        <div className="text-xs text-gray-600 font-mono">{selectedNode.id}</div>
+
+        {selectedNode.data?.label && (
+          <>
+            <div className="text-xs text-gray-500 mt-2">Label</div>
+            <div className="text-sm text-gray-900">{selectedNode.data.label}</div>
+          </>
+        )}
+
+        {selectedNode.type === 'strategy' && selectedNode.data?.conditions && (
+          <>
+            <div className="text-xs text-gray-500 mt-2">Conditions</div>
+            <div className="text-sm text-gray-900">
+              {selectedNode.data.conditions.length} condition(s)
             </div>
-            <div className="text-xs text-gray-500 mt-2">Node ID</div>
-            <div className="text-xs text-gray-600 font-mono">{selectedNode.id}</div>
-          </div>
+          </>
+        )}
+      </div>
 
-          {renderNodeConfig()}
+      {selectedNode.type === 'strategy' && (
+        <button
+          onClick={handleConfigure}
+          className="w-full mb-3 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          Configure Strategy
+        </button>
+      )}
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleDelete}
-              className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-            >
-              Delete Node
-            </button>
+      {selectedNode.type !== 'start' && selectedNode.id !== 'start-node' && (
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <button
+            onClick={handleDelete}
+            className="w-full px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          >
+            Delete Node
+          </button>
+        </div>
+      )}
+
+      {/* Show message for START node */}
+      {(selectedNode.type === 'start' || selectedNode.id === 'start-node') && (
+        <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs text-green-800 font-medium">
+              START node cannot be deleted
+            </span>
           </div>
-        </>
+          <p className="text-xs text-green-700 mt-1">
+            This node is required for workflow execution
+          </p>
+        </div>
       )}
     </div>
   );
