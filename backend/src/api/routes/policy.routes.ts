@@ -32,8 +32,8 @@ router.post('/', authenticate, requireRole(['admin', 'policy_creator']), async (
       });
     }
 
-    // Validate workflow structure
-    const validation = await validatePolicy(workflow_json);
+    // Validate workflow structure (non-strict for drafts)
+    const validation = await validatePolicy(workflow_json, false);
     if (!validation.valid) {
       return res.status(400).json({
         success: false,
@@ -168,9 +168,9 @@ router.put('/:id', authenticate, requireRole(['admin', 'policy_creator']), async
     const updates = req.body;
     const userId = req.user!.id;
 
-    // If workflow_json is being updated, validate it
+    // If workflow_json is being updated, validate it (non-strict for drafts)
     if (updates.workflow_json) {
-      const validation = await validatePolicy(updates.workflow_json);
+      const validation = await validatePolicy(updates.workflow_json, false);
       if (!validation.valid) {
         return res.status(400).json({
           success: false,

@@ -264,7 +264,7 @@ export const activatePolicy = async (policyId: string): Promise<void> => {
 /**
  * Validate policy workflow
  */
-export const validatePolicy = async (workflowJson: any): Promise<{
+export const validatePolicy = async (workflowJson: any, strict: boolean = false): Promise<{
   valid: boolean;
   errors: string[];
 }> => {
@@ -280,32 +280,34 @@ export const validatePolicy = async (workflowJson: any): Promise<{
       errors.push('Workflow must have a start node');
     }
 
-    // Check for at least one decision node
-    const decisionNodes = nodes.filter((n: any) => n.type === 'decision');
-    if (decisionNodes.length === 0) {
-      errors.push('Workflow must have at least one decision node');
-    }
+    // Only enforce decision node requirement in strict mode (for activation/publishing)
+    if (strict) {
+      // Check for at least one decision node
+      const decisionNodes = nodes.filter((n: any) => n.type === 'decision');
+      if (decisionNodes.length === 0) {
+        errors.push('Workflow must have at least one decision node');
+      }
 
-    // Check for orphaned nodes
-    const connectedNodes = new Set<string>();
-    edges.forEach((edge: any) => {
-      connectedNodes.add(edge.source);
-      connectedNodes.add(edge.target);
-    });
+      // Check for orphaned nodes
+      const connectedNodes = new Set<string>();
+      edges.forEach((edge: any) => {
+        connectedNodes.add(edge.source);
+        connectedNodes.add(edge.target);
+      });
 
-    const orphanedNodes = nodes.filter((n: any) =>
-      n.type !== 'start' && !connectedNodes.has(n.id)
-    );
+      const orphanedNodes = nodes.filter((n: any) =>
+        n.type !== 'start' && !connectedNodes.has(n.id)
+      );
 
-    if (orphanedNodes.length > 0) {
-      errors.push(`Found ${orphanedNodes.length} orphaned node(s)`);
-    }
+      if (orphanedNodes.length > 0) {
+        errors.push(`Found ${orphanedNodes.length} orphaned node(s)`);
+      }
 
-    // Check all paths lead to decision
-    // (Simplified check - in production, do graph traversal)
-    const hasPathToDecision = decisionNodes.length > 0;
-    if (!hasPathToDecision) {
-      errors.push('Not all paths lead to a decision node');
+      // Check all paths lead to decision
+      const hasPathToDecision = decisionNodes.length > 0;
+      if (!hasPathToDecision) {
+        errors.push('Not all paths lead to a decision node');
+      }
     }
 
     return {
