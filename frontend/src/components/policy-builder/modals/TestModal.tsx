@@ -51,6 +51,12 @@ export const TestModal: React.FC<TestModalProps> = ({
   const handleRunSingleTest = async () => {
     try {
       const parsedJson = JSON.parse(jsonInput);
+
+      // Transform to split view when running single test
+      if (onSwitchToSplitView) {
+        onSwitchToSplitView();
+      }
+
       setIsRunning(true);
       await onRunSingleTest(parsedJson);
     } catch (error: any) {
@@ -125,12 +131,7 @@ export const TestModal: React.FC<TestModalProps> = ({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                handleModeSwitch('single');
-                if (onSwitchToSplitView) {
-                  onSwitchToSplitView();
-                }
-              }}
+              onClick={() => handleModeSwitch('single')}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
                 testMode === 'single'
                   ? 'bg-blue-600 text-white'

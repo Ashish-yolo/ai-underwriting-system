@@ -1,19 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { XMarkIcon, PlayIcon } from '@heroicons/react/24/outline';
 
 interface TestPanelProps {
   onClose: () => void;
   onRunTest: (jsonData: any) => Promise<void>;
   isRunning: boolean;
+  initialJsonData?: string;
 }
 
 export const TestPanel: React.FC<TestPanelProps> = ({
   onClose,
   onRunTest,
   isRunning,
+  initialJsonData,
 }) => {
-  const [jsonInput, setJsonInput] = useState('');
+  const [jsonInput, setJsonInput] = useState(initialJsonData || '');
   const [jsonError, setJsonError] = useState('');
+
+  // Auto-run test when panel opens with initial data
+  useEffect(() => {
+    if (initialJsonData) {
+      handleRunTest();
+    }
+  }, []); // Only run once on mount
 
   const handleJsonChange = (value: string) => {
     setJsonInput(value);

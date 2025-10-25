@@ -29,6 +29,7 @@ const PolicyBuilder: React.FC = () => {
   const [showRightSidebar, setShowRightSidebar] = useState(true);
   const [isTestPanelOpen, setIsTestPanelOpen] = useState(false);
   const [isTestRunning, setIsTestRunning] = useState(false);
+  const [pendingTestData, setPendingTestData] = useState<any>(null);
 
   const {
     policyName,
@@ -286,6 +287,7 @@ const PolicyBuilder: React.FC = () => {
               onClose={() => {
                 setIsTestPanelOpen(false);
                 clearTestResults();
+                setPendingTestData(null);
               }}
               onRunTest={async (jsonData) => {
                 setIsTestRunning(true);
@@ -297,6 +299,7 @@ const PolicyBuilder: React.FC = () => {
                 }
               }}
               isRunning={isTestRunning}
+              initialJsonData={pendingTestData}
             />
           </div>
         )}
@@ -404,8 +407,8 @@ const PolicyBuilder: React.FC = () => {
           clearTestResults();
         }}
         onRunSingleTest={async (jsonData) => {
-          clearTestResults();
-          await testPolicy(jsonData);
+          // Store the JSON data and let the split view handle running the test
+          setPendingTestData(JSON.stringify(jsonData, null, 2));
         }}
         onRunBulkTest={async (file) => {
           // Bulk test functionality - to be implemented if needed
