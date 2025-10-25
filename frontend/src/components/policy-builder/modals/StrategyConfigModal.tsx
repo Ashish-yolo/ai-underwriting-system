@@ -7,7 +7,7 @@ export interface Condition {
   variable: string;
   operator: string;
   value: string | number;
-  decision: 'Approved' | 'Reject' | 'Manual Check';
+  decision: 'Approved' | 'Manual Check';
   logicalOperator?: 'AND' | 'OR';
 }
 
@@ -15,31 +15,25 @@ interface StrategyConfigModalProps {
   isOpen: boolean;
   nodeName: string;
   conditions: Condition[];
-  defaultDecision: 'Approved' | 'Reject' | 'Manual Check';
   onClose: () => void;
-  onSave: (nodeName: string, conditions: Condition[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => void;
+  onSave: (nodeName: string, conditions: Condition[]) => void;
 }
 
 export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
   isOpen,
   nodeName,
   conditions: initialConditions,
-  defaultDecision: initialDefaultDecision,
   onClose,
   onSave,
 }) => {
   const [conditions, setConditions] = useState<Condition[]>(initialConditions);
-  const [defaultDecision, setDefaultDecision] = useState<'Approved' | 'Reject' | 'Manual Check'>(
-    initialDefaultDecision
-  );
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(nodeName);
 
   useEffect(() => {
     setConditions(initialConditions);
-    setDefaultDecision(initialDefaultDecision);
     setTempName(nodeName);
-  }, [initialConditions, initialDefaultDecision, nodeName, isOpen]);
+  }, [initialConditions, nodeName, isOpen]);
 
   if (!isOpen) return null;
 
@@ -84,7 +78,7 @@ export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
     }
 
     // Save with node name
-    onSave(tempName, conditions, defaultDecision);
+    onSave(tempName, conditions);
   };
 
   return (
@@ -188,25 +182,18 @@ export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
               </button>
             </div>
 
-            {/* Default Decision */}
+            {/* Decision Logic Info */}
             <div className="border-t border-gray-200 pt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                If no conditions match:
-              </label>
-              <select
-                value={defaultDecision}
-                onChange={(e) =>
-                  setDefaultDecision(e.target.value as 'Approved' | 'Reject' | 'Manual Check')
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Approved">✓ Approved</option>
-                <option value="Reject">✗ Reject</option>
-                <option value="Manual Check">⚠ Manual Check</option>
-              </select>
-              <p className="mt-2 text-xs text-gray-500">
-                This decision will be used when none of the conditions above match the application data.
-              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">
+                  Decision Logic:
+                </h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• If ALL conditions FAIL → Block outputs <span className="font-semibold text-red-600">REJECT</span></li>
+                  <li>• If any condition PASSES with "Manual Check" → Block outputs <span className="font-semibold text-yellow-600">MANUAL CHECK</span></li>
+                  <li>• If all passing conditions are "Approved" → Block outputs <span className="font-semibold text-green-600">APPROVED</span></li>
+                </ul>
+              </div>
             </div>
           </div>
 

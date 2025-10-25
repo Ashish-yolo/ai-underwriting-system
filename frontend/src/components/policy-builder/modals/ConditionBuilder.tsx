@@ -11,7 +11,6 @@ interface ConditionBuilderProps {
 
 const DECISIONS = [
   { value: 'Approved', label: '✓ Approved', color: 'text-green-600' },
-  { value: 'Reject', label: '✗ Reject', color: 'text-red-600' },
   { value: 'Manual Check', label: '⚠ Manual Check', color: 'text-yellow-600' },
 ];
 
@@ -105,7 +104,7 @@ export const ConditionBuilder: React.FC<ConditionBuilderProps> = ({
           <select
             value={condition.decision}
             onChange={(e) =>
-              onChange({ decision: e.target.value as 'Approved' | 'Reject' | 'Manual Check' })
+              onChange({ decision: e.target.value as 'Approved' | 'Manual Check' })
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm
                      focus:outline-none focus:ring-2 focus:ring-blue-500"

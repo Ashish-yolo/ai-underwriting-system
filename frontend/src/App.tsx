@@ -6,7 +6,6 @@ import Policies from './pages/Policies';
 import PolicyBuilder from './pages/PolicyBuilder';
 import Connectors from './pages/Connectors';
 import ManualReview from './pages/ManualReview';
-import Testing from './pages/Testing';
 import Analytics from './pages/Analytics';
 import Layout from './components/Layout';
 import './App.css';
@@ -58,7 +57,6 @@ const AppRouter = () => {
         <Route path="policy-builder/:id" element={<PolicyBuilder />} />
         <Route path="connectors" element={<Connectors />} />
         <Route path="manual-review" element={<ManualReview />} />
-        <Route path="testing" element={<Testing />} />
         <Route path="analytics" element={<Analytics />} />
       </Route>
 

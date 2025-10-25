@@ -89,12 +89,28 @@ export const executeWorkflow = async (
       throw new Error('No start node found in workflow');
     }
 
+    // Track all strategy node decisions for voting
+    const allStrategyDecisions: Array<'approved' | 'rejected' | 'manual_review'> = [];
+    const allFailedConditions: string[] = [];
+    const allManualCheckReasons: string[] = [];
+
     // Execute workflow
     while (currentNode) {
       context.current_node = currentNode.id;
 
       // Execute node
       const nodeResult = await executeNode(currentNode, context, workflow);
+
+      // If this is a strategy node, collect its decision
+      if (currentNode.type === 'strategy') {
+        allStrategyDecisions.push(nodeResult.decision);
+        if (nodeResult.failedConditions && nodeResult.failedConditions.length > 0) {
+          allFailedConditions.push(...nodeResult.failedConditions);
+        }
+        if (nodeResult.manualCheckReasons && nodeResult.manualCheckReasons.length > 0) {
+          allManualCheckReasons.push(...nodeResult.manualCheckReasons);
+        }
+      }
 
       // If this is a decision node, we're done
       if (currentNode.type === 'decision') {
@@ -117,7 +133,52 @@ export const executeWorkflow = async (
       currentNode = findNextNode(currentNode, nodeResult, workflow);
     }
 
-    throw new Error('Workflow ended without reaching a decision node');
+    // If we've executed strategy nodes, determine final decision based on voting
+    if (allStrategyDecisions.length > 0) {
+      const totalTime = Date.now() - context.start_time;
+
+      // Voting logic: Rejected > Manual Review > Approved
+      let finalDecision: 'approved' | 'rejected' | 'manual_review';
+      let finalReason: string;
+
+      const rejectedCount = allStrategyDecisions.filter(d => d === 'rejected').length;
+      const manualReviewCount = allStrategyDecisions.filter(d => d === 'manual_review').length;
+      const approvedCount = allStrategyDecisions.filter(d => d === 'approved').length;
+
+      if (rejectedCount > 0) {
+        finalDecision = 'rejected';
+        finalReason = `Application rejected. Failed conditions: ${allFailedConditions.join('; ')}`;
+      } else if (manualReviewCount > 0) {
+        finalDecision = 'manual_review';
+        finalReason = `Manual review required. ${allManualCheckReasons.join('; ')}`;
+      } else {
+        finalDecision = 'approved';
+        finalReason = `All ${approvedCount} strategy block(s) approved`;
+      }
+
+      return {
+        success: true,
+        application_id: applicationId,
+        underwriting_id: underwritingId,
+        decision: finalDecision,
+        reason: finalReason,
+        details: {
+          strategyResults: {
+            total: allStrategyDecisions.length,
+            approved: approvedCount,
+            rejected: rejectedCount,
+            manualReview: manualReviewCount,
+          },
+          failedConditions: allFailedConditions,
+          manualCheckReasons: allManualCheckReasons,
+        },
+        execution_trace: context.execution_trace,
+        total_execution_time_ms: totalTime,
+        variables: context.variables,
+      };
+    }
+
+    throw new Error('Workflow ended without reaching a decision node or executing any strategy nodes');
 
   } catch (error) {
     logger.error(`Workflow execution error: ${error.message}`);
@@ -194,6 +255,9 @@ const executeNode = async (
       case 'start':
         result = await executeStartNode(node, context);
         break;
+      case 'strategy':
+        result = await executeStrategyNode(node, context);
+        break;
       case 'dataSource':
         result = await executeDataSourceNode(node, context);
         break;
@@ -260,6 +324,134 @@ const executeNode = async (
 
 const executeStartNode = async (node: WorkflowNode, context: ExecutionContext) => {
   return { success: true };
+};
+
+const executeStrategyNode = async (node: WorkflowNode, context: ExecutionContext) => {
+  const nodeData = node.data || {};
+  const conditions = nodeData.conditions || [];
+
+  if (conditions.length === 0) {
+    throw new Error(`Strategy node "${nodeData.label || 'Unnamed'}" has no conditions configured`);
+  }
+
+  const conditionsEvaluated: any[] = [];
+  const failedConditions: string[] = [];
+  const manualCheckReasons: string[] = [];
+
+  let hasAnyRejection = false;
+  let hasManualCheck = false;
+
+  // Evaluate all conditions
+  for (let i = 0; i < conditions.length; i++) {
+    const cond = conditions[i];
+    const isMatch = evaluateStrategyCondition(cond, context.variables);
+
+    const conditionStr = `${cond.variable} ${cond.operator} ${cond.value}`;
+
+    if (isMatch) {
+      // Condition matched - use the decision set on the condition
+      if (cond.decision === 'Manual Check') {
+        hasManualCheck = true;
+        manualCheckReasons.push(`${conditionStr} requires manual review`);
+        conditionsEvaluated.push({
+          condition: conditionStr,
+          result: true,
+          decision: 'Manual Check',
+          reason: 'Requires manual verification'
+        });
+      } else {
+        // Approved
+        conditionsEvaluated.push({
+          condition: conditionStr,
+          result: true,
+          decision: 'Approved'
+        });
+      }
+    } else {
+      // Condition did NOT match - this becomes a REJECT
+      hasAnyRejection = true;
+      failedConditions.push(conditionStr);
+      conditionsEvaluated.push({
+        condition: conditionStr,
+        result: false,
+        decision: 'Rejected',
+        reason: 'Condition not met'
+      });
+
+      // For AND logic, if one condition fails, stop evaluating
+      if (i < conditions.length - 1 && cond.logicalOperator === 'AND') {
+        break;
+      }
+    }
+
+    // For OR logic, if one condition passes, we can stop
+    if (isMatch && i < conditions.length - 1 && cond.logicalOperator === 'OR') {
+      break;
+    }
+  }
+
+  // Determine node decision: Rejected > Manual Review > Approved
+  let decision: 'approved' | 'rejected' | 'manual_review';
+  let reason: string;
+
+  if (hasAnyRejection) {
+    decision = 'rejected';
+    reason = `Failed conditions: ${failedConditions.join(', ')}`;
+  } else if (hasManualCheck) {
+    decision = 'manual_review';
+    reason = manualCheckReasons.join('; ');
+  } else {
+    decision = 'approved';
+    reason = 'All conditions passed';
+  }
+
+  return {
+    success: true,
+    decision,
+    reason,
+    conditionsEvaluated,
+    failedConditions,
+    manualCheckReasons,
+  };
+};
+
+// Helper function to evaluate a strategy condition
+const evaluateStrategyCondition = (condition: any, variables: Record<string, any>): boolean => {
+  const { variable, operator, value } = condition;
+
+  // Get actual value from variables using dot notation
+  const actualValue = getNestedValue(variables, variable);
+
+  switch (operator) {
+    case '=':
+      return actualValue == value;
+    case '!=':
+      return actualValue != value;
+    case '<':
+      return Number(actualValue) < Number(value);
+    case '>':
+      return Number(actualValue) > Number(value);
+    case '<=':
+      return Number(actualValue) <= Number(value);
+    case '>=':
+      return Number(actualValue) >= Number(value);
+    case 'IN':
+      const listValues = String(value).split(',').map(v => v.trim());
+      return listValues.includes(String(actualValue));
+    case 'NOT IN':
+      const notInValues = String(value).split(',').map(v => v.trim());
+      return !notInValues.includes(String(actualValue));
+    case 'CONTAINS':
+      return String(actualValue).includes(String(value));
+    case 'STARTS_WITH':
+      return String(actualValue).startsWith(String(value));
+    case 'IS_NULL':
+      return actualValue === null || actualValue === undefined || actualValue === '';
+    case 'IS_NOT_NULL':
+      return actualValue !== null && actualValue !== undefined && actualValue !== '';
+    default:
+      return false;
+  }
 };
 
 const executeDataSourceNode = async (node: WorkflowNode, context: ExecutionContext) => {

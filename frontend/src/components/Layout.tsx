@@ -17,7 +17,6 @@ const Layout: React.FC = () => {
     { name: 'Policies', path: '/policies', icon: '📋' },
     { name: 'Connectors', path: '/connectors', icon: '🔌' },
     { name: 'Manual Review', path: '/manual-review', icon: '👥' },
-    { name: 'Testing', path: '/testing', icon: '🧪' },
     { name: 'Analytics', path: '/analytics', icon: '📈' },
   ];
 

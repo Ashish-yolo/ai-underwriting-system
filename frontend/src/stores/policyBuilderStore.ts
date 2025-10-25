@@ -6,14 +6,13 @@ export interface Condition {
   variable: string;
   operator: string;
   value: string | number;
-  decision: 'Approved' | 'Reject' | 'Manual Check';
+  decision: 'Approved' | 'Manual Check'; // Only 2 decision types - Reject happens when condition doesn't match
   logicalOperator?: 'AND' | 'OR';
 }
 
 export interface StrategyNodeData {
   label: string;
   conditions?: Condition[];
-  defaultDecision?: 'Approved' | 'Reject' | 'Manual Check';
   testResult?: 'approved' | 'reject' | 'manual_check' | null;
 }
 
@@ -72,22 +71,31 @@ export interface ValidationError {
 }
 
 export interface TestResults {
-  finalDecision: 'Approved' | 'Reject' | 'Manual Check';
+  finalDecision: 'Approved' | 'Rejected' | 'Manual Review';
   executionTrace: {
     nodeId: string;
     nodeName: string;
     conditionsEvaluated: {
       condition: string;
-      result: boolean;
-      decision: string;
+      result: boolean; // true = condition matched, false = condition failed (becomes Reject)
+      decision: string; // The decision set on the condition (Approved/Manual Check) or Reject if failed
+      reason?: string; // For Manual Check, what needs to be checked
     }[];
     nodeDecision: string;
+    failedConditions: string[]; // List of conditions that failed
+    manualCheckReasons: string[]; // What needs manual review
   }[];
   allDecisions: string[];
   votingResult: {
     approved: number;
-    reject: number;
-    manualCheck: number;
+    rejected: number;
+    manualReview: number;
+  };
+  summary: {
+    totalConditions: number;
+    passedConditions: number;
+    failedConditions: number;
+    manualCheckConditions: number;
   };
 }
 
@@ -368,6 +376,11 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
     const executionTrace: TestResults['executionTrace'] = [];
     const allDecisions: string[] = [];
 
+    let totalConditions = 0;
+    let passedConditions = 0;
+    let failedConditions = 0;
+    let manualCheckConditions = 0;
+
     // Find all strategy nodes
     const strategyNodes = nodes.filter(n => n.type === 'strategy');
 
@@ -376,42 +389,75 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
       const nodeData = node.data as StrategyNodeData;
       const conditions = nodeData.conditions || [];
 
-      const conditionsEvaluated = conditions.map(cond => {
-        const result = evaluateCondition(cond, testData);
-        return {
-          condition: `${cond.variable} ${cond.operator} ${cond.value}`,
-          result,
-          decision: cond.decision,
-        };
-      });
+      const conditionsEvaluated: any[] = [];
+      const failedConditionsList: string[] = [];
+      const manualCheckReasons: string[] = [];
 
-      // Determine node decision based on conditions
-      let nodeDecision = nodeData.defaultDecision || 'Manual Check';
+      let hasAnyRejection = false;
+      let hasManualCheck = false;
 
-      // Find first matching condition
+      // Evaluate all conditions
       for (let i = 0; i < conditions.length; i++) {
         const cond = conditions[i];
         const isMatch = evaluateCondition(cond, testData);
+        totalConditions++;
+
+        const conditionStr = `${cond.variable} ${cond.operator} ${cond.value}`;
 
         if (isMatch) {
-          nodeDecision = cond.decision;
-
-          // Check if we need to continue with AND/OR logic
-          if (i < conditions.length - 1 && cond.logicalOperator === 'OR') {
-            break; // OR means we stop at first match
-          } else if (i < conditions.length - 1 && cond.logicalOperator === 'AND') {
-            // Continue checking next condition
-            continue;
+          // Condition matched - use the decision set on the condition
+          if (cond.decision === 'Manual Check') {
+            hasManualCheck = true;
+            manualCheckConditions++;
+            manualCheckReasons.push(`${conditionStr} requires manual review`);
+            conditionsEvaluated.push({
+              condition: conditionStr,
+              result: true,
+              decision: 'Manual Check',
+              reason: `Requires manual verification`
+            });
           } else {
-            break;
+            // Approved
+            passedConditions++;
+            conditionsEvaluated.push({
+              condition: conditionStr,
+              result: true,
+              decision: 'Approved'
+            });
           }
         } else {
-          // If condition doesn't match and it's AND, use default
+          // Condition did NOT match - this becomes a REJECT
+          hasAnyRejection = true;
+          failedConditions++;
+          failedConditionsList.push(conditionStr);
+          conditionsEvaluated.push({
+            condition: conditionStr,
+            result: false,
+            decision: 'Rejected',
+            reason: 'Condition not met'
+          });
+
+          // For AND logic, if one condition fails, stop evaluating
           if (i < conditions.length - 1 && cond.logicalOperator === 'AND') {
-            nodeDecision = nodeData.defaultDecision || 'Manual Check';
             break;
           }
         }
+
+        // For OR logic, if one condition passes, we can stop
+        if (isMatch && i < conditions.length - 1 && cond.logicalOperator === 'OR') {
+          break;
+        }
+      }
+
+      // Determine node decision: Reject > Manual Check > Approved
+      let nodeDecision: 'Approved' | 'Rejected' | 'Manual Review';
+
+      if (hasAnyRejection) {
+        nodeDecision = 'Rejected';
+      } else if (hasManualCheck) {
+        nodeDecision = 'Manual Review';
+      } else {
+        nodeDecision = 'Approved';
       }
 
       executionTrace.push({
@@ -419,13 +465,15 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
         nodeName: nodeData.label || 'Strategy',
         conditionsEvaluated,
         nodeDecision,
+        failedConditions: failedConditionsList,
+        manualCheckReasons,
       });
 
       allDecisions.push(nodeDecision);
 
       // Set visual feedback on node
       const visualResult = nodeDecision === 'Approved' ? 'approved'
-        : nodeDecision === 'Reject' ? 'reject'
+        : nodeDecision === 'Rejected' ? 'reject'
         : 'manual_check';
 
       // Update node immediately with test result
@@ -437,22 +485,22 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
         ),
       });
 
-      // Add delay for visual effect
+      // Add delay for visual effect (blocks execute sequentially)
       await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    // Voting algorithm: Reject > Manual Check > Approved
+    // Voting algorithm: Rejected > Manual Review > Approved
     const votingResult = {
       approved: allDecisions.filter(d => d === 'Approved').length,
-      reject: allDecisions.filter(d => d === 'Reject').length,
-      manualCheck: allDecisions.filter(d => d === 'Manual Check').length,
+      rejected: allDecisions.filter(d => d === 'Rejected').length,
+      manualReview: allDecisions.filter(d => d === 'Manual Review').length,
     };
 
-    let finalDecision: 'Approved' | 'Reject' | 'Manual Check' = 'Approved';
-    if (votingResult.reject > 0) {
-      finalDecision = 'Reject';
-    } else if (votingResult.manualCheck > 0) {
-      finalDecision = 'Manual Check';
+    let finalDecision: 'Approved' | 'Rejected' | 'Manual Review' = 'Approved';
+    if (votingResult.rejected > 0) {
+      finalDecision = 'Rejected';
+    } else if (votingResult.manualReview > 0) {
+      finalDecision = 'Manual Review';
     }
 
     const results: TestResults = {
@@ -460,6 +508,12 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
       executionTrace,
       allDecisions,
       votingResult,
+      summary: {
+        totalConditions,
+        passedConditions,
+        failedConditions,
+        manualCheckConditions,
+      },
     };
 
     set({ testResults: results });
@@ -585,7 +639,6 @@ function getDefaultNodeData(type: string): any {
         ...baseData,
         label: 'Strategy',
         conditions: [],
-        defaultDecision: 'Manual Check' as const,
       };
 
     default:
