@@ -2,8 +2,101 @@ import { Router, Request, Response } from 'express';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import { pool } from '../../config/database';
 import logger from '../../utils/logger';
+import {
+  getAllAnalytics,
+  getDailyVolumeAndApprovalTrend,
+  getApplicationFunnel,
+  getApprovalRateByCreditScore,
+  getStrategyPerformance,
+  getDecisionSplit,
+} from '../../services/analytics.service';
 
 const router = Router();
+
+/**
+ * GET /api/analytics/dashboard
+ * Get all dashboard analytics data
+ */
+router.get('/dashboard', authenticate, async (req: Request, res: Response) => {
+  try {
+    const analytics = await getAllAnalytics();
+    res.json({ success: true, data: analytics });
+  } catch (error: any) {
+    logger.error(`Get dashboard analytics error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/analytics/daily-trend
+ * Get daily volume and approval trend
+ */
+router.get('/daily-trend', authenticate, async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const data = await getDailyVolumeAndApprovalTrend(days);
+    res.json({ success: true, data });
+  } catch (error: any) {
+    logger.error(`Get daily trend error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/analytics/funnel
+ * Get application funnel
+ */
+router.get('/funnel', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await getApplicationFunnel();
+    res.json({ success: true, data });
+  } catch (error: any) {
+    logger.error(`Get funnel error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/analytics/credit-score-bands
+ * Get approval rate by credit score band
+ */
+router.get('/credit-score-bands', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await getApprovalRateByCreditScore();
+    res.json({ success: true, data });
+  } catch (error: any) {
+    logger.error(`Get credit score bands error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/analytics/strategy-performance
+ * Get champion vs challenger performance
+ */
+router.get('/strategy-performance', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await getStrategyPerformance();
+    res.json({ success: true, data });
+  } catch (error: any) {
+    logger.error(`Get strategy performance error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/analytics/decision-split
+ * Get manual vs auto decision split
+ */
+router.get('/decision-split', authenticate, async (req: Request, res: Response) => {
+  try {
+    const data = await getDecisionSplit();
+    res.json({ success: true, data });
+  } catch (error: any) {
+    logger.error(`Get decision split error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 /**
  * Get overall system analytics
