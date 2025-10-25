@@ -16,6 +16,8 @@ import { CanvasWithProvider } from '../components/policy-builder/Canvas';
 import { PropertyPanel } from '../components/policy-builder/PropertyPanel';
 import { StrategyConfigModal } from '../components/policy-builder/modals/StrategyConfigModal';
 import { TestModal } from '../components/policy-builder/modals/TestModal';
+import { TestPanel } from '../components/policy-builder/TestPanel';
+import { TestResultsOverlay } from '../components/policy-builder/TestResultsOverlay';
 import { policyApi } from '../services/policyApi';
 
 const PolicyBuilder: React.FC = () => {
@@ -25,6 +27,8 @@ const PolicyBuilder: React.FC = () => {
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [showLeftSidebar, setShowLeftSidebar] = useState(true);
   const [showRightSidebar, setShowRightSidebar] = useState(true);
+  const [isTestPanelOpen, setIsTestPanelOpen] = useState(false);
+  const [isTestRunning, setIsTestRunning] = useState(false);
 
   const {
     policyName,
@@ -35,6 +39,7 @@ const PolicyBuilder: React.FC = () => {
     selectedNode,
     isConfigModalOpen,
     isTestModalOpen,
+    testResults,
     setPolicyMetadata,
     loadPolicy,
     clearPolicy,
@@ -274,55 +279,87 @@ const PolicyBuilder: React.FC = () => {
 
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Sidebar Toggle */}
-        {!showLeftSidebar && (
-          <button
-            onClick={() => setShowLeftSidebar(true)}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-r-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
-            title="Show Node Palette"
-          >
-            <ChevronRightIcon className="w-5 h-5 text-gray-600" />
-          </button>
-        )}
-
-        {/* Right Sidebar Toggle */}
-        {!showRightSidebar && (
-          <button
-            onClick={() => setShowRightSidebar(true)}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-l-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
-            title="Show Properties Panel"
-          >
-            <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
-          </button>
-        )}
-
-        {showLeftSidebar && (
-          <div className="relative">
-            <NodePalette onDragStart={handleDragStart} />
-            <button
-              onClick={() => setShowLeftSidebar(false)}
-              className="absolute top-2 right-2 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
-              title="Hide Node Palette"
-            >
-              <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
-            </button>
+        {/* Test Panel (Split View Left Side) */}
+        {isTestPanelOpen && (
+          <div className="w-1/2 border-r border-gray-300 animate-slide-in-left">
+            <TestPanel
+              onClose={() => {
+                setIsTestPanelOpen(false);
+                clearTestResults();
+              }}
+              onRunTest={async (jsonData) => {
+                setIsTestRunning(true);
+                try {
+                  clearTestResults();
+                  await testPolicy(jsonData);
+                } finally {
+                  setIsTestRunning(false);
+                }
+              }}
+              isRunning={isTestRunning}
+            />
           </div>
         )}
 
-        <CanvasWithProvider />
-
-        {showRightSidebar && selectedNode && (
-          <div className="relative">
+        {/* Canvas Area (Full width or Right side of split view) */}
+        <div className={`flex-1 flex overflow-hidden relative transition-all duration-300 ${
+          isTestPanelOpen ? 'w-1/2' : 'w-full'
+        }`}>
+          {/* Left Sidebar Toggle */}
+          {!showLeftSidebar && !isTestPanelOpen && (
             <button
-              onClick={() => setShowRightSidebar(false)}
-              className="absolute top-2 left-2 z-10 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
-              title="Hide Properties Panel"
+              onClick={() => setShowLeftSidebar(true)}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-r-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
+              title="Show Node Palette"
             >
-              <ChevronRightIcon className="w-4 h-4 text-gray-600" />
+              <ChevronRightIcon className="w-5 h-5 text-gray-600" />
             </button>
-            <PropertyPanel />
+          )}
+
+          {/* Right Sidebar Toggle */}
+          {!showRightSidebar && (
+            <button
+              onClick={() => setShowRightSidebar(true)}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-l-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
+              title="Show Properties Panel"
+            >
+              <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+            </button>
+          )}
+
+          {showLeftSidebar && !isTestPanelOpen && (
+            <div className="relative">
+              <NodePalette onDragStart={handleDragStart} />
+              <button
+                onClick={() => setShowLeftSidebar(false)}
+                className="absolute top-2 right-2 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
+                title="Hide Node Palette"
+              >
+                <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
+          )}
+
+          <div className="flex-1 relative">
+            <CanvasWithProvider />
+
+            {/* Test Results Overlay */}
+            <TestResultsOverlay results={testResults} />
           </div>
-        )}
+
+          {showRightSidebar && selectedNode && (
+            <div className="relative">
+              <button
+                onClick={() => setShowRightSidebar(false)}
+                className="absolute top-2 left-2 z-10 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
+                title="Hide Properties Panel"
+              >
+                <ChevronRightIcon className="w-4 h-4 text-gray-600" />
+              </button>
+              <PropertyPanel />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Footer Stats */}
@@ -361,7 +398,7 @@ const PolicyBuilder: React.FC = () => {
 
       {/* Test Modal */}
       <TestModal
-        isOpen={isTestModalOpen}
+        isOpen={isTestModalOpen && !isTestPanelOpen}
         onClose={() => {
           closeTestModal();
           clearTestResults();
@@ -373,6 +410,10 @@ const PolicyBuilder: React.FC = () => {
         onRunBulkTest={async (file) => {
           // Bulk test functionality - to be implemented if needed
           console.log('Bulk test with file:', file);
+        }}
+        onSwitchToSplitView={() => {
+          closeTestModal();
+          setIsTestPanelOpen(true);
         }}
       />
     </div>

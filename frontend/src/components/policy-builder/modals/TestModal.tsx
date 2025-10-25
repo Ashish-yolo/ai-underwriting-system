@@ -16,6 +16,7 @@ interface TestModalProps {
   onClose: () => void;
   onRunSingleTest: (jsonData: any) => Promise<void>;
   onRunBulkTest: (file: File) => Promise<void>;
+  onSwitchToSplitView?: () => void;
 }
 
 export const TestModal: React.FC<TestModalProps> = ({
@@ -23,6 +24,7 @@ export const TestModal: React.FC<TestModalProps> = ({
   onClose,
   onRunSingleTest,
   onRunBulkTest,
+  onSwitchToSplitView,
 }) => {
   const [testMode, setTestMode] = useState<'single' | 'bulk'>('single');
   const [jsonInput, setJsonInput] = useState('');
@@ -30,9 +32,16 @@ export const TestModal: React.FC<TestModalProps> = ({
   const [isRunning, setIsRunning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { testResults } = usePolicyBuilderStore();
+  const { testResults, clearTestResults } = usePolicyBuilderStore();
 
   if (!isOpen) return null;
+
+  const handleModeSwitch = (mode: 'single' | 'bulk') => {
+    setTestMode(mode);
+    clearTestResults();
+    setJsonError('');
+    setJsonInput('');
+  };
 
   const handleJsonChange = (value: string) => {
     setJsonInput(value);
@@ -116,7 +125,12 @@ export const TestModal: React.FC<TestModalProps> = ({
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex gap-2">
             <button
-              onClick={() => setTestMode('single')}
+              onClick={() => {
+                handleModeSwitch('single');
+                if (onSwitchToSplitView) {
+                  onSwitchToSplitView();
+                }
+              }}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
                 testMode === 'single'
                   ? 'bg-blue-600 text-white'
@@ -127,7 +141,7 @@ export const TestModal: React.FC<TestModalProps> = ({
               Single Application (JSON)
             </button>
             <button
-              onClick={() => setTestMode('bulk')}
+              onClick={() => handleModeSwitch('bulk')}
               className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${
                 testMode === 'bulk'
                   ? 'bg-blue-600 text-white'
