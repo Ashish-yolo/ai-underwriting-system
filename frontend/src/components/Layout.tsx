@@ -83,21 +83,19 @@ const Layout: React.FC = () => {
               ))}
             </nav>
 
-            {/* Hide Sidebar Button - Only visible in PolicyBuilder */}
-            {isPolicyBuilderPage && (
-              <button
-                onClick={() => setSidebarVisible(false)}
-                className="absolute top-2 right-2 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
-                title="Hide Navigation Sidebar"
-              >
-                <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
-              </button>
-            )}
+            {/* Hide Sidebar Button - Always visible */}
+            <button
+              onClick={() => setSidebarVisible(false)}
+              className="absolute top-2 right-2 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors z-10"
+              title="Hide Navigation Sidebar"
+            >
+              <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
+            </button>
           </aside>
         )}
 
-        {/* Show Sidebar Button - Only visible when sidebar is hidden and in PolicyBuilder */}
-        {!sidebarVisible && isPolicyBuilderPage && (
+        {/* Show Sidebar Button - Visible when sidebar is hidden on any page */}
+        {!sidebarVisible && (
           <button
             onClick={() => setSidebarVisible(true)}
             className="absolute left-0 top-8 z-50 bg-white border border-gray-300 rounded-r-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
