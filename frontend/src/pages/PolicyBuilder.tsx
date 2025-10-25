@@ -5,6 +5,7 @@ import {
   DocumentCheckIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline';
 
 import { usePolicyBuilderStore } from '../stores/policyBuilderStore';
@@ -12,6 +13,7 @@ import { NodePalette } from '../components/policy-builder/NodePalette';
 import { CanvasWithProvider } from '../components/policy-builder/Canvas';
 import { PropertyPanel } from '../components/policy-builder/PropertyPanel';
 import { StrategyConfigModal } from '../components/policy-builder/modals/StrategyConfigModal';
+import { TestModal } from '../components/policy-builder/modals/TestModal';
 import { policyApi } from '../services/policyApi';
 
 const PolicyBuilder: React.FC = () => {
@@ -28,12 +30,18 @@ const PolicyBuilder: React.FC = () => {
     validationErrors,
     selectedNode,
     isConfigModalOpen,
+    isTestModalOpen,
+    testResults,
     setPolicyMetadata,
     loadPolicy,
     clearPolicy,
     validateWorkflow,
     closeConfigModal,
     updateNodeData,
+    openTestModal,
+    closeTestModal,
+    clearTestResults,
+    testPolicy,
   } = usePolicyBuilderStore();
 
   // Load policy if editing
@@ -211,6 +219,14 @@ const PolicyBuilder: React.FC = () => {
             </button>
 
             <button
+              onClick={openTestModal}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <BeakerIcon className="w-5 h-5" />
+              Test
+            </button>
+
+            <button
               onClick={handleSave}
               disabled={isSaving}
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -293,6 +309,23 @@ const PolicyBuilder: React.FC = () => {
           onSave={handleSaveStrategy}
         />
       )}
+
+      {/* Test Modal */}
+      <TestModal
+        isOpen={isTestModalOpen}
+        onClose={() => {
+          closeTestModal();
+          clearTestResults();
+        }}
+        onRunSingleTest={async (jsonData) => {
+          clearTestResults();
+          await testPolicy(jsonData);
+        }}
+        onRunBulkTest={async (file) => {
+          // Bulk test functionality - to be implemented if needed
+          console.log('Bulk test with file:', file);
+        }}
+      />
     </div>
   );
 };
