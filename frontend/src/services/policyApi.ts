@@ -75,7 +75,18 @@ export const policyApi = {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to create policy: ${response.statusText}`);
+      // Try to get detailed error message from backend
+      let errorMessage = response.statusText;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        if (errorData.details && Array.isArray(errorData.details)) {
+          errorMessage += ': ' + errorData.details.join(', ');
+        }
+      } catch (e) {
+        // If JSON parsing fails, use status text
+      }
+      throw new Error(`Failed to create policy: ${errorMessage}`);
     }
 
     const data = await response.json();
@@ -126,13 +137,33 @@ export const policyApi = {
    * Publish a policy (make it active)
    */
   async publishPolicy(id: string): Promise<Policy> {
-    const response = await fetch(`${API_BASE_URL}/policies/${id}/publish`, {
+    // Try /publish endpoint first (new deployment), fallback to /activate (old deployment)
+    let response = await fetch(`${API_BASE_URL}/policies/${id}/publish`, {
       method: 'POST',
       headers: authHeaders(),
     });
 
+    // If 404, try the /activate endpoint as fallback
+    if (response.status === 404) {
+      response = await fetch(`${API_BASE_URL}/policies/${id}/activate`, {
+        method: 'POST',
+        headers: authHeaders(),
+      });
+    }
+
     if (!response.ok) {
-      throw new Error(`Failed to publish policy: ${response.statusText}`);
+      // Try to parse error response
+      let errorMessage = response.statusText;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+        if (errorData.details) {
+          errorMessage += ': ' + errorData.details.join(', ');
+        }
+      } catch (e) {
+        // If JSON parsing fails, use status text
+      }
+      throw new Error(`Failed to publish policy: ${errorMessage}`);
     }
 
     const data = await response.json();

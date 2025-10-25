@@ -115,8 +115,17 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
   setEdges: (edges) => set({ edges }),
 
   onNodesChange: (changes) => {
+    // Filter out any removal changes for the start node
+    const filteredChanges = changes.filter(change => {
+      if (change.type === 'remove' && change.id === 'start-node') {
+        console.warn('Cannot remove START node - it is required');
+        return false;
+      }
+      return true;
+    });
+
     set({
-      nodes: applyNodeChanges(changes, get().nodes),
+      nodes: applyNodeChanges(filteredChanges, get().nodes),
     });
   },
 
@@ -229,13 +238,16 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
   },
 
   loadPolicy: (policyData) => {
+    // Backend returns workflow_json, handle both workflow and workflow_json
+    const workflowData = policyData.workflow_json || policyData.workflow || {};
+
     set({
       policyId: policyData.id,
       policyName: policyData.name,
       policyDescription: policyData.description,
       policyVersion: policyData.version || 1,
-      nodes: policyData.workflow?.nodes || [],
-      edges: policyData.workflow?.edges || [],
+      nodes: workflowData.nodes || [],
+      edges: workflowData.edges || [],
       selectedNode: null,
       isConfigModalOpen: false,
       isTestModalOpen: false,

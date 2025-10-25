@@ -67,15 +67,14 @@ export const Canvas: React.FC = () => {
         return;
       }
 
-      // Get the position where the node was dropped
-      const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-      if (!reactFlowBounds || !reactFlowInstance) {
+      if (!reactFlowInstance) {
         return;
       }
 
-      const position = reactFlowInstance.project({
-        x: event.clientX - reactFlowBounds.left,
-        y: event.clientY - reactFlowBounds.top,
+      // Use screenToFlowPosition instead of deprecated project method
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
       });
 
       addNode(type, position);

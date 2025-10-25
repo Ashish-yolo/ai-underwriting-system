@@ -289,10 +289,10 @@ export const validatePolicy = async (workflowJson: any, strict: boolean = false)
 
     // Only enforce decision node requirement in strict mode (for activation/publishing)
     if (strict) {
-      // Check for at least one decision node
-      const decisionNodes = nodes.filter((n: any) => n.type === 'decision');
+      // Check for at least one decision-making node (decision OR strategy nodes)
+      const decisionNodes = nodes.filter((n: any) => n.type === 'decision' || n.type === 'strategy');
       if (decisionNodes.length === 0) {
-        errors.push('Workflow must have at least one decision node');
+        errors.push('Workflow must have at least one strategy or decision node');
       }
 
       // Check for orphaned nodes
@@ -310,11 +310,13 @@ export const validatePolicy = async (workflowJson: any, strict: boolean = false)
         errors.push(`Found ${orphanedNodes.length} orphaned node(s)`);
       }
 
-      // Check all paths lead to decision
-      const hasPathToDecision = decisionNodes.length > 0;
-      if (!hasPathToDecision) {
-        errors.push('Not all paths lead to a decision node');
-      }
+      // Validate that strategy nodes have proper configuration
+      const strategyNodes = nodes.filter((n: any) => n.type === 'strategy');
+      strategyNodes.forEach((node: any) => {
+        if (!node.data?.defaultDecision) {
+          errors.push(`Strategy node "${node.data?.label || node.id}" must have a default decision`);
+        }
+      });
     }
 
     return {

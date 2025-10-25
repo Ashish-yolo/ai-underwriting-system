@@ -102,14 +102,16 @@ const PolicyBuilder: React.FC = () => {
 
       // Build the policy object
       const policyData = {
-        name: policyName,
-        description: policyDescription,
+        name: policyName || 'Untitled Policy', // Ensure name is never empty
+        description: policyDescription || '',
         product_type: 'loan', // Default product type
         workflow_json: {
           nodes,
           edges,
         },
       };
+
+      console.log('Saving policy with data:', policyData);
 
       // Call API to save policy
       if (id) {
@@ -125,6 +127,7 @@ const PolicyBuilder: React.FC = () => {
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error: any) {
       console.error('Error saving policy:', error);
+      console.error('Error details:', error.response, error.message);
       const errorMessage = error.message || 'Failed to save policy - backend may be offline';
       setSaveMessage({ type: 'error', text: errorMessage });
       setTimeout(() => setSaveMessage(null), 5000);
@@ -146,9 +149,15 @@ const PolicyBuilder: React.FC = () => {
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error: any) {
       console.error('Error publishing policy:', error);
-      const errorMessage = error.message || 'Failed to publish policy - backend may be offline';
+      let errorMessage = error.message || 'Failed to publish policy';
+
+      // Check for specific JSON parse errors (usually means 404)
+      if (errorMessage.includes('Unexpected token') || errorMessage.includes('JSON')) {
+        errorMessage = 'Backend is still deploying. Please wait 1-2 minutes and try again.';
+      }
+
       setSaveMessage({ type: 'error', text: errorMessage });
-      setTimeout(() => setSaveMessage(null), 5000);
+      setTimeout(() => setSaveMessage(null), 8000);
     }
   };
 
@@ -279,14 +288,14 @@ const PolicyBuilder: React.FC = () => {
                 type="text"
                 value={policyName}
                 onChange={(e) => setPolicyMetadata({ name: e.target.value })}
-                className="text-2xl font-bold text-gray-900 border-0 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-2 py-1"
+                className="text-2xl font-bold text-gray-900 bg-transparent border-0 border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-2 py-1"
               />
               <input
                 type="text"
                 value={policyDescription}
                 onChange={(e) => setPolicyMetadata({ description: e.target.value })}
                 placeholder="Add description..."
-                className="block text-sm text-gray-600 border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-2 py-1 mt-1"
+                className="block text-sm text-gray-600 bg-transparent border-0 border-b border-transparent hover:border-gray-300 focus:border-blue-500 focus:outline-none px-2 py-1 mt-1 placeholder:text-gray-400"
               />
             </div>
           </div>
