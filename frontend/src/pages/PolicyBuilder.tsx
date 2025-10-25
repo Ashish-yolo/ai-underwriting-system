@@ -31,7 +31,6 @@ const PolicyBuilder: React.FC = () => {
     selectedNode,
     isConfigModalOpen,
     isTestModalOpen,
-    testResults,
     setPolicyMetadata,
     loadPolicy,
     clearPolicy,
