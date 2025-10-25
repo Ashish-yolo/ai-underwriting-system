@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
 const Layout: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [sidebarVisible, setSidebarVisible] = useState(true);
 
   const handleLogout = async () => {
     await logout();
@@ -21,6 +23,9 @@ const Layout: React.FC = () => {
   ];
 
   const isActive = (path: string) => location.pathname.startsWith(path);
+
+  // Check if we're in the PolicyBuilder page
+  const isPolicyBuilderPage = location.pathname.includes('/policy-builder');
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -54,32 +59,58 @@ const Layout: React.FC = () => {
       </nav>
 
       {/* Side Navigation + Main Content */}
-      <div className="flex">
+      <div className="flex relative">
         {/* Sidebar */}
-        <aside className="w-64 bg-white shadow-md min-h-[calc(100vh-4rem)]">
-          <nav className="mt-5 px-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`
-                  group flex items-center px-4 py-3 text-sm font-medium rounded-md mb-1
-                  ${
-                    isActive(item.path)
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }
-                `}
+        {sidebarVisible && (
+          <aside className="w-64 bg-white shadow-md min-h-[calc(100vh-4rem)] relative">
+            <nav className="mt-5 px-2">
+              {navigation.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`
+                    group flex items-center px-4 py-3 text-sm font-medium rounded-md mb-1
+                    ${
+                      isActive(item.path)
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }
+                  `}
+                >
+                  <span className="mr-3 text-lg">{item.icon}</span>
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+
+            {/* Hide Sidebar Button - Only visible in PolicyBuilder */}
+            {isPolicyBuilderPage && (
+              <button
+                onClick={() => setSidebarVisible(false)}
+                className="absolute top-2 right-2 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
+                title="Hide Navigation Sidebar"
               >
-                <span className="mr-3 text-lg">{item.icon}</span>
-                {item.name}
-              </Link>
-            ))}
-          </nav>
-        </aside>
+                <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
+              </button>
+            )}
+          </aside>
+        )}
+
+        {/* Show Sidebar Button - Only visible when sidebar is hidden and in PolicyBuilder */}
+        {!sidebarVisible && isPolicyBuilderPage && (
+          <button
+            onClick={() => setSidebarVisible(true)}
+            className="absolute left-0 top-8 z-50 bg-white border border-gray-300 rounded-r-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
+            title="Show Navigation Sidebar"
+          >
+            <ChevronRightIcon className="w-5 h-5 text-gray-600" />
+          </button>
+        )}
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
+        <main className={`flex-1 transition-all duration-300 ${
+          isPolicyBuilderPage ? (sidebarVisible ? 'p-0' : 'p-0') : 'p-8'
+        }`}>
           <Outlet />
         </main>
       </div>
