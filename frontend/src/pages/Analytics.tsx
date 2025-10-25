@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Line,
   BarChart,
@@ -24,9 +25,11 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Analytics: React.FC = () => {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthError, setIsAuthError] = useState(false);
 
   useEffect(() => {
     loadAnalytics();
@@ -36,11 +39,19 @@ const Analytics: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+      setIsAuthError(false);
       const data = await analyticsApi.getDashboard();
       setAnalytics(data);
     } catch (err: any) {
       console.error('Failed to load analytics:', err);
-      setError(err.message || 'Failed to load analytics data');
+
+      // Check if it's an authentication error
+      if (err.response?.status === 401) {
+        setIsAuthError(true);
+        setError('You need to be logged in to view analytics. Please log in and try again.');
+      } else {
+        setError(err.message || 'Failed to load analytics data');
+      }
     } finally {
       setLoading(false);
     }
@@ -60,14 +71,26 @@ const Analytics: React.FC = () => {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-        <h2 className="text-lg font-semibold text-red-900 mb-2">Error Loading Analytics</h2>
+        <h2 className="text-lg font-semibold text-red-900 mb-2">
+          {isAuthError ? 'Authentication Required' : 'Error Loading Analytics'}
+        </h2>
         <p className="text-red-700">{error}</p>
-        <button
-          onClick={loadAnalytics}
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-        >
-          Retry
-        </button>
+        <div className="flex gap-3 mt-4">
+          {isAuthError && (
+            <button
+              onClick={() => navigate('/login')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Go to Login
+            </button>
+          )}
+          <button
+            onClick={loadAnalytics}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
