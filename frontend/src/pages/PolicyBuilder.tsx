@@ -6,6 +6,8 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   BeakerIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
 } from '@heroicons/react/24/outline';
 
 import { usePolicyBuilderStore } from '../stores/policyBuilderStore';
@@ -21,6 +23,8 @@ const PolicyBuilder: React.FC = () => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showLeftSidebar, setShowLeftSidebar] = useState(true);
+  const [showRightSidebar, setShowRightSidebar] = useState(true);
 
   const {
     policyName,
@@ -269,10 +273,56 @@ const PolicyBuilder: React.FC = () => {
       </div>
 
       {/* Main Workspace */}
-      <div className="flex-1 flex overflow-hidden">
-        <NodePalette onDragStart={handleDragStart} />
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Sidebar Toggle */}
+        {!showLeftSidebar && (
+          <button
+            onClick={() => setShowLeftSidebar(true)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-r-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
+            title="Show Node Palette"
+          >
+            <ChevronRightIcon className="w-5 h-5 text-gray-600" />
+          </button>
+        )}
+
+        {/* Right Sidebar Toggle */}
+        {!showRightSidebar && (
+          <button
+            onClick={() => setShowRightSidebar(true)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-300 rounded-l-lg p-2 shadow-lg hover:bg-gray-50 transition-colors"
+            title="Show Properties Panel"
+          >
+            <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+          </button>
+        )}
+
+        {showLeftSidebar && (
+          <div className="relative">
+            <NodePalette onDragStart={handleDragStart} />
+            <button
+              onClick={() => setShowLeftSidebar(false)}
+              className="absolute top-2 right-2 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
+              title="Hide Node Palette"
+            >
+              <ChevronLeftIcon className="w-4 h-4 text-gray-600" />
+            </button>
+          </div>
+        )}
+
         <CanvasWithProvider />
-        <PropertyPanel />
+
+        {showRightSidebar && selectedNode && (
+          <div className="relative">
+            <button
+              onClick={() => setShowRightSidebar(false)}
+              className="absolute top-2 left-2 z-10 bg-white border border-gray-300 rounded-lg p-1.5 shadow-sm hover:bg-gray-50 transition-colors"
+              title="Hide Properties Panel"
+            >
+              <ChevronRightIcon className="w-4 h-4 text-gray-600" />
+            </button>
+            <PropertyPanel />
+          </div>
+        )}
       </div>
 
       {/* Footer Stats */}
