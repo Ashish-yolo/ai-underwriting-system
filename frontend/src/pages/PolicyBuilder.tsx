@@ -280,9 +280,9 @@ const PolicyBuilder: React.FC = () => {
 
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Test Panel (Split View Left Side) */}
+        {/* Test Panel (Split View Left Side - 30%) */}
         {isTestPanelOpen && (
-          <div className="w-1/2 border-r border-gray-300 animate-slide-in-left">
+          <div className="w-[30%] border-r border-gray-300 animate-slide-in-left">
             <TestPanel
               onClose={() => {
                 setIsTestPanelOpen(false);
@@ -304,9 +304,9 @@ const PolicyBuilder: React.FC = () => {
           </div>
         )}
 
-        {/* Canvas Area (Full width or Right side of split view) */}
+        {/* Canvas Area (Full width or 70% in split view) */}
         <div className={`flex-1 flex overflow-hidden relative transition-all duration-300 ${
-          isTestPanelOpen ? 'w-1/2' : 'w-full'
+          isTestPanelOpen ? 'w-[70%]' : 'w-full'
         }`}>
           {/* Left Sidebar Toggle */}
           {!showLeftSidebar && !isTestPanelOpen && (
