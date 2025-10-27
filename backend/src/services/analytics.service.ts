@@ -96,13 +96,7 @@ export const getApprovalRateByCreditScore = async (): Promise<any[]> => {
     const result = await pool.query(
       `
       SELECT
-        CASE
-          WHEN (request_data->'applicant'->>'credit_score')::INT < 650 THEN '<650'
-          WHEN (request_data->'applicant'->>'credit_score')::INT BETWEEN 650 AND 700 THEN '650-700'
-          WHEN (request_data->'applicant'->>'credit_score')::INT BETWEEN 701 AND 750 THEN '701-750'
-          WHEN (request_data->'applicant'->>'credit_score')::INT BETWEEN 751 AND 800 THEN '751-800'
-          ELSE '>800'
-        END as score_band,
+        score_band,
         COUNT(*) as total_applications,
         SUM(CASE WHEN decision = 'approved' THEN 1 ELSE 0 END) as approved_count,
         ROUND(
@@ -110,10 +104,21 @@ export const getApprovalRateByCreditScore = async (): Promise<any[]> => {
           NULLIF(COUNT(*), 0)) * 100,
           2
         ) as approval_rate
-      FROM api_requests
-      WHERE
-        request_data->'applicant'->>'credit_score' IS NOT NULL
-        AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+      FROM (
+        SELECT
+          CASE
+            WHEN (request_data->'applicant'->>'credit_score')::INT < 650 THEN '<650'
+            WHEN (request_data->'applicant'->>'credit_score')::INT BETWEEN 650 AND 700 THEN '650-700'
+            WHEN (request_data->'applicant'->>'credit_score')::INT BETWEEN 701 AND 750 THEN '701-750'
+            WHEN (request_data->'applicant'->>'credit_score')::INT BETWEEN 751 AND 800 THEN '751-800'
+            ELSE '>800'
+          END as score_band,
+          decision
+        FROM api_requests
+        WHERE
+          request_data->'applicant'->>'credit_score' IS NOT NULL
+          AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+      ) subquery
       GROUP BY score_band
       ORDER BY
         CASE score_band
