@@ -8,7 +8,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false
+        value: postgresql://postgres:Ashi08gmail.com@db.glejgqtveeywjppbsxxv.supabase.co:5432/postgres
       - key: JWT_SECRET
         generateValue: true
       - key: PORT
