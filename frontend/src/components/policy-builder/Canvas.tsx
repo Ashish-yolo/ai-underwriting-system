@@ -33,6 +33,7 @@ const defaultEdgeOptions = {
 export const Canvas: React.FC = () => {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const [reactFlowInstance, setReactFlowInstance] = React.useState<ReactFlowInstance | null>(null);
+  const [isInitialized, setIsInitialized] = React.useState(false);
 
   const {
     nodes,
@@ -50,6 +51,14 @@ export const Canvas: React.FC = () => {
   useEffect(() => {
     initializeCanvas();
   }, [initializeCanvas]);
+
+  // Set initial viewport ONCE when reactFlow instance is ready
+  useEffect(() => {
+    if (reactFlowInstance && !isInitialized) {
+      reactFlowInstance.setViewport({ x: 50, y: 50, zoom: 0.6 });
+      setIsInitialized(true);
+    }
+  }, [reactFlowInstance, isInitialized]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -142,7 +151,9 @@ export const Canvas: React.FC = () => {
         isValidConnection={isValidConnection}
         snapToGrid={true}
         snapGrid={[15, 15]}
-        fitView
+        defaultViewport={{ x: 0, y: 0, zoom: 0.6 }}
+        minZoom={0.2}
+        maxZoom={2}
         attributionPosition="bottom-left"
         connectionRadius={50}
       >
