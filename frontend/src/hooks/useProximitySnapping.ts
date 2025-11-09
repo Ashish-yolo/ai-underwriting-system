@@ -46,8 +46,7 @@ function calculateDistance(
  * Uses centroid calculation with weighted influence based on proximity
  */
 function calculateStrategyPosition(
-  policyNodes: Node[],
-  config: ProximityConfig
+  policyNodes: Node[]
 ): { x: number; y: number } | null {
   if (policyNodes.length === 0) return null;
   if (policyNodes.length === 1) {
@@ -187,7 +186,7 @@ export function useProximitySnapping(
       let minDistance = Infinity;
 
       for (const cluster of clusters) {
-        const clusterCenter = calculateStrategyPosition(cluster, config);
+        const clusterCenter = calculateStrategyPosition(cluster);
         if (!clusterCenter) continue;
 
         const dist = calculateDistance(
@@ -205,7 +204,7 @@ export function useProximitySnapping(
 
       // If we found a close cluster, move the strategy block
       if (closestCluster && minDistance < config.proximityThreshold * 2) {
-        const newPosition = calculateStrategyPosition(closestCluster, config);
+        const newPosition = calculateStrategyPosition(closestCluster);
         if (!newPosition) continue;
 
         // Check if position actually changed significantly (avoid micro-movements)

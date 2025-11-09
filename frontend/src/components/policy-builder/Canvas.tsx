@@ -8,7 +8,6 @@ import ReactFlow, {
   ReactFlowInstance,
   ConnectionLineType,
   MarkerType,
-  Node as ReactFlowNode,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import '../../styles/nodeTransitions.css';

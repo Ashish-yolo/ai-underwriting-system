@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   BookOpenIcon,
   CodeBracketIcon,
-  KeyIcon,
   ShieldCheckIcon,
   ClipboardDocumentIcon,
   CheckIcon,
@@ -21,54 +20,6 @@ const APIDocs: React.FC = () => {
       console.error('Failed to copy:', err);
     }
   };
-
-  const sections = [
-    {
-      id: 'authentication',
-      title: 'Authentication',
-      icon: KeyIcon,
-      content: `All API requests must include an API key in the X-API-Key header:
-
-curl -H "X-API-Key: YOUR_API_KEY" \\
-     ${API_BASE_URL}/api/policies/execute`,
-    },
-    {
-      id: 'execute-policy',
-      title: 'Execute Policy',
-      icon: CodeBracketIcon,
-      content: `POST ${API_BASE_URL}/api/policies/{policy_id}/execute
-
-Request Body:
-{
-  "applicant": {
-    "credit_score": 720,
-    "annual_income": 75000,
-    "employment_status": "employed",
-    "debt_to_income_ratio": 0.35
-  },
-  "loan": {
-    "amount": 50000,
-    "term_months": 60,
-    "purpose": "auto",
-    "interest_rate": 4.5
-  }
-}
-
-Response:
-{
-  "success": true,
-  "data": {
-    "decision": "Approved",
-    "policy_id": "policy_123",
-    "execution_time_ms": 45,
-    "reasons": [
-      "Credit score above minimum threshold",
-      "DTI ratio acceptable"
-    ]
-  }
-}`,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
