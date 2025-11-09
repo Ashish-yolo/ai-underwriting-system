@@ -54,7 +54,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await apiService.login(email, password);
 
       if (response.success) {
-        const { token, user } = response.data;
+        const { token, user: backendUser } = response.data;
+
+        // Map backend user to frontend user format
+        const user: User = {
+          id: backendUser.id,
+          email: backendUser.email,
+          name: backendUser.full_name || backendUser.email,
+          role: backendUser.role,
+        };
 
         // Store in state
         setToken(token);
