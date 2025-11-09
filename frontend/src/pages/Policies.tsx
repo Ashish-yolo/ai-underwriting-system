@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { CodeBracketIcon } from '@heroicons/react/24/outline';
 import { apiService } from '../services/api';
+import APIIntegrationPanel from '../components/policies/APIIntegrationPanel';
 
 const Policies: React.FC = () => {
   const [policies, setPolicies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [apiPanelOpen, setApiPanelOpen] = useState(false);
+  const [selectedPolicy, setSelectedPolicy] = useState<any | null>(null);
 
   useEffect(() => {
     loadPolicies();
@@ -125,31 +129,58 @@ const Policies: React.FC = () => {
                 Created: {new Date(policy.created_at).toLocaleDateString()}
               </div>
 
-              <div className="flex space-x-2">
-                <Link
-                  to={`/policies/${policy.id}/edit`}
-                  className="btn btn-secondary text-sm flex-1"
-                >
-                  Edit
-                </Link>
-                {policy.status !== 'active' && (
+              <div className="space-y-2">
+                {policy.status === 'active' && (
                   <button
-                    onClick={() => handleActivate(policy.id)}
-                    className="btn btn-primary text-sm flex-1"
+                    onClick={() => {
+                      setSelectedPolicy(policy);
+                      setApiPanelOpen(true);
+                    }}
+                    className="w-full px-3 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center justify-center gap-2 font-medium"
                   >
-                    Activate
+                    <CodeBracketIcon className="w-4 h-4" />
+                    View API Integration
                   </button>
                 )}
-                <button
-                  onClick={() => handleDelete(policy.id)}
-                  className="btn btn-danger text-sm"
-                >
-                  Delete
-                </button>
+                <div className="flex space-x-2">
+                  <Link
+                    to={`/policies/${policy.id}/edit`}
+                    className="btn btn-secondary text-sm flex-1"
+                  >
+                    Edit
+                  </Link>
+                  {policy.status !== 'active' && (
+                    <button
+                      onClick={() => handleActivate(policy.id)}
+                      className="btn btn-primary text-sm flex-1"
+                    >
+                      Activate
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDelete(policy.id)}
+                    className="btn btn-danger text-sm"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {/* API Integration Panel */}
+      {selectedPolicy && (
+        <APIIntegrationPanel
+          policyId={selectedPolicy.id}
+          policyName={selectedPolicy.name}
+          isOpen={apiPanelOpen}
+          onClose={() => {
+            setApiPanelOpen(false);
+            setSelectedPolicy(null);
+          }}
+        />
       )}
     </div>
   );

@@ -7,6 +7,8 @@ import PolicyBuilder from './pages/PolicyBuilder';
 import Connectors from './pages/Connectors';
 import ManualReview from './pages/ManualReview';
 import Analytics from './pages/Analytics';
+import APIKeys from './pages/APIKeys';
+import APIDocs from './pages/APIDocs';
 import Layout from './components/Layout';
 import './App.css';
 
@@ -58,6 +60,8 @@ const AppRouter = () => {
         <Route path="connectors" element={<Connectors />} />
         <Route path="manual-review" element={<ManualReview />} />
         <Route path="analytics" element={<Analytics />} />
+        <Route path="api-keys" element={<APIKeys />} />
+        <Route path="api-docs" element={<APIDocs />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
