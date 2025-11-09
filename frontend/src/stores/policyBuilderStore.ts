@@ -45,6 +45,7 @@ export interface PolicyBuilderState {
   addNode: (type: string, position: { x: number; y: number }) => void;
   deleteNode: (nodeId: string) => void;
   updateNodeData: (nodeId: string, data: Partial<StrategyNodeData>) => void;
+  updateNodePosition: (nodeId: string, position: { x: number; y: number }) => void;
 
   selectNode: (node: Node<StrategyNodeData> | null) => void;
   openConfigModal: (nodeId: string) => void;
@@ -181,6 +182,16 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
       nodes: get().nodes.map(node =>
         node.id === nodeId
           ? { ...node, data: { ...node.data, ...data } }
+          : node
+      ),
+    });
+  },
+
+  updateNodePosition: (nodeId, position) => {
+    set({
+      nodes: get().nodes.map(node =>
+        node.id === nodeId
+          ? { ...node, position }
           : node
       ),
     });

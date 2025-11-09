@@ -8,11 +8,14 @@ import ReactFlow, {
   ReactFlowInstance,
   ConnectionLineType,
   MarkerType,
+  Node as ReactFlowNode,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import '../../styles/nodeTransitions.css';
 
 import { usePolicyBuilderStore } from '../../stores/policyBuilderStore';
 import { nodeTypes } from './nodes';
+import { useProximitySnapping, DEFAULT_PROXIMITY_CONFIG } from '../../hooks/useProximitySnapping';
 
 // Custom styles for connections
 const connectionLineStyle = {
@@ -45,7 +48,22 @@ export const Canvas: React.FC = () => {
     addNode,
     initializeCanvas,
     openConfigModal,
+    updateNodePosition,
   } = usePolicyBuilderStore();
+
+  // Initialize proximity snapping with smooth transitions
+  const proximityConfig = {
+    ...DEFAULT_PROXIMITY_CONFIG,
+    proximityThreshold: 200, // Trigger when nodes are within 200px
+    transitionDuration: 400, // 400ms smooth transition
+    minimumGap: 60,
+  };
+
+  const { onNodeDragStart, onNodeDrag, onNodeDragStop } = useProximitySnapping(
+    nodes,
+    updateNodePosition,
+    proximityConfig
+  );
 
   // Initialize canvas with Start node on mount
   useEffect(() => {
@@ -144,6 +162,9 @@ export const Canvas: React.FC = () => {
         onDragOver={onDragOver}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
+        onNodeDragStart={onNodeDragStart}
+        onNodeDrag={onNodeDrag}
+        onNodeDragStop={onNodeDragStop}
         nodeTypes={nodeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionLineType={ConnectionLineType.SmoothStep}
