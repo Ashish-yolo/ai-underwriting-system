@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger';
 import { callConnector } from '../services/connector.service';
+import { getApplicationConnectorData, getConnectorByName } from '../services/connector-execution.service';
 import * as math from 'mathjs';
 
 export interface WorkflowNode {
@@ -82,6 +83,9 @@ export const executeWorkflow = async (
   };
 
   try {
+    // Load connector variables for this application
+    await loadConnectorVariables(applicationId, context);
+
     // Find start node
     let currentNode = findStartNode(workflow.nodes);
 
@@ -625,6 +629,83 @@ const executeDBQueryNode = async (node: WorkflowNode, context: ExecutionContext)
 /**
  * Helper functions
  */
+
+/**
+ * Resolve connector variables from ConnectorName.VariableName format
+ * Loads application connector data and extracts the specified variable
+ */
+const resolveConnectorVariable = async (
+  variableName: string,
+  applicationId: string
+): Promise<any> => {
+  // Check if this is a connector variable (ConnectorName.VariableName)
+  if (!variableName.includes('.')) {
+    return null;
+  }
+
+  const [connectorName, varName] = variableName.split('.');
+
+  try {
+    // Get connector by name
+    const connector = await getConnectorByName(connectorName);
+    if (!connector) {
+      logger.warn(`Connector not found: ${connectorName}`);
+      return null;
+    }
+
+    // Get application connector data
+    const connectorData = await getApplicationConnectorData(applicationId, connector.id);
+    if (!connectorData || !connectorData.data) {
+      logger.warn(`No data found for connector ${connectorName} and application ${applicationId}`);
+      return null;
+    }
+
+    // Extract variable value from flattened data
+    const value = connectorData.data[varName];
+    if (value === undefined) {
+      logger.warn(`Variable ${varName} not found in connector ${connectorName} data`);
+      return null;
+    }
+
+    return value;
+  } catch (error: any) {
+    logger.error(`Error resolving connector variable ${variableName}: ${error.message}`);
+    return null;
+  }
+};
+
+/**
+ * Load all connector variables for an application into context
+ */
+const loadConnectorVariables = async (
+  applicationId: string,
+  context: ExecutionContext
+): Promise<void> => {
+  try {
+    // Get all connector data for this application
+    const allConnectorData = await getApplicationConnectorData(applicationId);
+
+    if (!allConnectorData || allConnectorData.length === 0) {
+      return;
+    }
+
+    // Load each connector's data into context with ConnectorName.Variable format
+    for (const connectorData of allConnectorData) {
+      const connectorName = connectorData.connector_name;
+      const data = connectorData.data || {};
+
+      // Add each variable as ConnectorName.VariableName
+      Object.keys(data).forEach(varName => {
+        const qualifiedName = `${connectorName}.${varName}`;
+        context.variables[qualifiedName] = data[varName];
+      });
+
+      logger.info(`Loaded ${Object.keys(data).length} variables from connector ${connectorName}`);
+    }
+  } catch (error: any) {
+    logger.error(`Error loading connector variables: ${error.message}`);
+  }
+};
 
 const evaluateCondition = (condition: any, variables: Record<string, any>): boolean => {
   if (condition.operator === 'AND') {

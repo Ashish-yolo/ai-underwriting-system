@@ -162,26 +162,30 @@ const Connectors: React.FC = () => {
 
   if (showCreateForm) {
     return (
-      <ConnectorForm
-        onSuccess={() => {
-          setShowCreateForm(false);
-          loadConnectors();
-        }}
-        onCancel={() => setShowCreateForm(false)}
-      />
+      <div className="animate-fadeIn">
+        <ConnectorForm
+          onSuccess={() => {
+            setShowCreateForm(false);
+            loadConnectors();
+          }}
+          onCancel={() => setShowCreateForm(false)}
+        />
+      </div>
     );
   }
 
   if (selectedConnector) {
     return (
-      <ConnectorDetails
-        connector={selectedConnector}
-        onBack={() => setSelectedConnector(null)}
-        onUpdate={() => {
-          setSelectedConnector(null);
-          loadConnectors();
-        }}
-      />
+      <div className="animate-fadeIn">
+        <ConnectorDetails
+          connector={selectedConnector}
+          onBack={() => setSelectedConnector(null)}
+          onUpdate={() => {
+            setSelectedConnector(null);
+            loadConnectors();
+          }}
+        />
+      </div>
     );
   }
 
@@ -204,13 +208,8 @@ const Connectors: React.FC = () => {
             Refresh
           </button>
           <button
-            onClick={() => {
-              console.log('Add Connector clicked - showCreateForm current:', showCreateForm);
-              alert('Button clicked! Opening form...');
-              setShowCreateForm(true);
-              console.log('Add Connector clicked - showCreateForm set to true');
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => setShowCreateForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow-md hover:shadow-lg"
           >
             <PlusIcon className="w-5 h-5" />
             Add Connector
@@ -282,7 +281,7 @@ const Connectors: React.FC = () => {
           {filteredConnectors.map((connector) => (
             <div
               key={connector.id}
-              className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6 border border-gray-200"
+              className="bg-white rounded-lg shadow hover:shadow-xl transition-all duration-300 p-6 border border-gray-200 hover:border-blue-300 transform hover:-translate-y-1"
             >
               {/* Header */}
               <div className="flex justify-between items-start mb-4">
@@ -338,20 +337,22 @@ const Connectors: React.FC = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedConnector(connector)}
-                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
+                  className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 shadow hover:shadow-md flex items-center justify-center gap-1"
                 >
                   <ChartBarIcon className="w-4 h-4" />
                   Details
                 </button>
                 <button
                   onClick={() => handleTest(connector.id)}
-                  className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                  className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-all transform hover:scale-105 shadow hover:shadow-md"
+                  title="Test connection"
                 >
                   Test
                 </button>
                 <button
                   onClick={() => handleDelete(connector.id, connector.name)}
-                  className="px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                  className="px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-all transform hover:scale-105 shadow hover:shadow-md"
+                  title="Delete connector"
                 >
                   Delete
                 </button>

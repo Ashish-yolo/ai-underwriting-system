@@ -161,11 +161,12 @@ const PolicyBuilder: React.FC = () => {
     }
   };
 
-  const handleSaveStrategy = (nodeName: string, conditions: any[]) => {
+  const handleSaveStrategy = (nodeName: string, conditions: any[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => {
     if (selectedNode) {
       updateNodeData(selectedNode.id, {
         label: nodeName,
         conditions,
+        defaultDecision,
       });
       closeConfigModal();
     }
@@ -394,6 +395,7 @@ const PolicyBuilder: React.FC = () => {
           isOpen={isConfigModalOpen}
           nodeName={selectedNode.data?.label || 'Strategy'}
           conditions={selectedNode.data?.conditions || []}
+          defaultDecision={selectedNode.data?.defaultDecision}
           onClose={closeConfigModal}
           onSave={handleSaveStrategy}
         />

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import apiService from '../../../services/api';
 
 interface Variable {
   name: string;
   type: string;
   connector: string;
   description?: string;
+  sampleValue?: any;
 }
 
 interface VariableAutocompleteProps {
@@ -13,37 +15,66 @@ interface VariableAutocompleteProps {
   onChange: (value: string) => void;
 }
 
-// Mock data - in real app, fetch from GET /api/connectors/variables
-const MOCK_VARIABLES: Variable[] = [
-  { name: 'bureau.score', type: 'number', connector: 'Bureau Data (Experian)', description: 'CIBIL/Experian credit score' },
-  { name: 'bureau.accounts.total', type: 'number', connector: 'Bureau Data (Experian)', description: 'Total number of credit accounts' },
-  { name: 'bureau.delinquencies.dpd30', type: 'number', connector: 'Bureau Data (Experian)', description: 'Days past due 30+' },
-  { name: 'applicant.income', type: 'number', connector: 'Applicant Data', description: 'Monthly income' },
-  { name: 'applicant.age', type: 'number', connector: 'Applicant Data', description: 'Age in years' },
-  { name: 'applicant.employment', type: 'string', connector: 'Applicant Data', description: 'Employment type (SALARIED/SELF_EMPLOYED)' },
-  { name: 'applicant.city', type: 'string', connector: 'Applicant Data', description: 'City of residence' },
-  { name: 'bank.avgBalance', type: 'number', connector: 'Bank Statement (Perfios)', description: 'Average monthly balance' },
-  { name: 'bank.bounces', type: 'number', connector: 'Bank Statement (Perfios)', description: 'Number of bounced transactions' },
-  { name: 'bank.salary_credits', type: 'number', connector: 'Bank Statement (Perfios)', description: 'Number of salary credits' },
-];
-
 export const VariableAutocomplete: React.FC<VariableAutocompleteProps> = ({
   value,
   onChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredVariables, setFilteredVariables] = useState<Variable[]>(MOCK_VARIABLES);
+  const [allVariables, setAllVariables] = useState<Variable[]>([]);
+  const [filteredVariables, setFilteredVariables] = useState<Variable[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch variables from API on mount
+  useEffect(() => {
+    const fetchVariables = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiService.getAllConnectorVariables();
+
+        // Transform API response to Variable format
+        const variables: Variable[] = [];
+        if (response && response.length > 0) {
+          response.forEach((connector: any) => {
+            const connectorName = connector.connectorName;
+            connector.variables.forEach((variable: any) => {
+              variables.push({
+                name: `${connectorName}.${variable.variableName}`,
+                type: variable.dataType,
+                connector: connectorName,
+                description: variable.description || undefined,
+                sampleValue: variable.sampleValue,
+              });
+            });
+          });
+        }
+
+        setAllVariables(variables);
+        setFilteredVariables(variables);
+      } catch (err: any) {
+        console.error('Error fetching connector variables:', err);
+        setError('Failed to load variables');
+        setAllVariables([]);
+        setFilteredVariables([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVariables();
+  }, []);
 
   useEffect(() => {
     // Filter variables based on search term
     if (searchTerm.trim() === '') {
-      setFilteredVariables(MOCK_VARIABLES);
+      setFilteredVariables(allVariables);
     } else {
       const term = searchTerm.toLowerCase();
-      const filtered = MOCK_VARIABLES.filter(
+      const filtered = allVariables.filter(
         (v) =>
           v.name.toLowerCase().includes(term) ||
           v.description?.toLowerCase().includes(term) ||
@@ -51,7 +82,7 @@ export const VariableAutocomplete: React.FC<VariableAutocompleteProps> = ({
       );
       setFilteredVariables(filtered);
     }
-  }, [searchTerm]);
+  }, [searchTerm, allVariables]);
 
   useEffect(() => {
     // Close dropdown on outside click
@@ -105,9 +136,20 @@ export const VariableAutocomplete: React.FC<VariableAutocompleteProps> = ({
       {/* Dropdown */}
       {isOpen && (
         <div className="absolute z-10 mt-1 w-full max-h-64 overflow-y-auto bg-white border border-gray-300 rounded-md shadow-lg">
-          {Object.keys(groupedVariables).length === 0 ? (
+          {loading ? (
+            <div className="px-3 py-2 text-sm text-gray-500 text-center">
+              Loading variables...
+            </div>
+          ) : error ? (
+            <div className="px-3 py-2 text-sm text-red-500 text-center">
+              {error}
+            </div>
+          ) : Object.keys(groupedVariables).length === 0 ? (
             <div className="px-3 py-2 text-sm text-gray-500">
               No variables found
+              <div className="text-xs mt-1">
+                Try uploading sample responses for your connectors
+              </div>
             </div>
           ) : (
             Object.entries(groupedVariables).map(([connector, variables]) => (
@@ -124,12 +166,22 @@ export const VariableAutocomplete: React.FC<VariableAutocompleteProps> = ({
                     onClick={() => handleSelect(variable)}
                     className="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                   >
-                    <div className="text-sm font-medium text-gray-900">
-                      {variable.name}
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium text-gray-900">
+                        {variable.name}
+                      </div>
+                      <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
+                        {variable.type}
+                      </span>
                     </div>
                     {variable.description && (
                       <div className="text-xs text-gray-500 mt-0.5">
                         {variable.description}
+                      </div>
+                    )}
+                    {variable.sampleValue !== undefined && (
+                      <div className="text-xs text-blue-600 mt-0.5">
+                        Example: {JSON.stringify(variable.sampleValue)}
                       </div>
                     )}
                   </div>

@@ -9,6 +9,18 @@ import {
   getConnectorLogs,
   getConnectorHealth,
 } from '../../services/connector.service';
+import {
+  executeConnector,
+  storeManualSample,
+  getExecutionHistory,
+  getApplicationConnectorData,
+} from '../../services/connector-execution.service';
+import {
+  getConnectorVariables,
+  getAllAvailableVariables,
+  updateVariableMetadata,
+  refreshVariableRegistry,
+} from '../../services/variable-registry.service';
 import { authenticate, requireRole } from '../middleware/auth.middleware';
 import logger from '../../utils/logger';
 
@@ -239,6 +251,185 @@ router.get('/:id/health', async (req: Request, res: Response) => {
       success: false,
       error: {
         code: 'GET_HEALTH_ERROR',
+        message: error.message,
+      },
+    });
+  }
+});
+
+/**
+ * Execute connector
+ */
+router.post('/:id/execute', requireRole(['admin', 'policy_creator']), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { applicationId, requestPayload, executionType = 'live' } = req.body;
+
+    if (!requestPayload) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'requestPayload is required',
+        },
+      });
+      return;
+    }
+
+    const result = await executeConnector(id, applicationId, requestPayload, executionType);
+
+    res.json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    logger.error(`Execute connector error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'EXECUTE_CONNECTOR_ERROR',
+        message: error.message,
+      },
+    });
+  }
+});
+
+/**
+ * Store manual sample response
+ */
+router.post('/:id/sample', requireRole(['admin', 'policy_creator']), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { requestPayload, responsePayload } = req.body;
+
+    if (!requestPayload || !responsePayload) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Both requestPayload and responsePayload are required',
+        },
+      });
+      return;
+    }
+
+    const result = await storeManualSample(id, requestPayload, responsePayload);
+
+    res.json({
+      success: true,
+      data: result,
+      message: `Discovered ${result.variablesDiscovered} variables from sample`,
+    });
+  } catch (error) {
+    logger.error(`Store manual sample error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'STORE_SAMPLE_ERROR',
+        message: error.message,
+      },
+    });
+  }
+});
+
+/**
+ * Get connector variables
+ */
+router.get('/:id/variables', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const includeHidden = req.query.includeHidden === 'true';
+
+    const variables = await getConnectorVariables(id, includeHidden);
+
+    res.json({
+      success: true,
+      data: { variables },
+    });
+  } catch (error) {
+    logger.error(`Get connector variables error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_VARIABLES_ERROR',
+        message: error.message,
+      },
+    });
+  }
+});
+
+/**
+ * Refresh variable registry from latest execution
+ */
+router.post('/:id/variables/refresh', requireRole(['admin', 'policy_creator']), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await refreshVariableRegistry(id);
+
+    res.json({
+      success: true,
+      data: result,
+      message: `Refreshed: ${result.discovered} new, ${result.updated} updated`,
+    });
+  } catch (error) {
+    logger.error(`Refresh variable registry error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'REFRESH_VARIABLES_ERROR',
+        message: error.message,
+      },
+    });
+  }
+});
+
+/**
+ * Get connector execution history
+ */
+router.get('/:id/executions', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const limit = parseInt(req.query.limit as string) || 50;
+
+    const executions = await getExecutionHistory(id, limit);
+
+    res.json({
+      success: true,
+      data: { executions },
+    });
+  } catch (error) {
+    logger.error(`Get execution history error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'GET_EXECUTIONS_ERROR',
+        message: error.message,
+      },
+    });
+  }
+});
+
+/**
+ * Update variable metadata
+ */
+router.patch('/variables/:variableId', requireRole(['admin', 'policy_creator']), async (req: Request, res: Response) => {
+  try {
+    const { variableId } = req.params;
+    const { displayName, description, isHidden } = req.body;
+
+    await updateVariableMetadata(variableId, { displayName, description, isHidden });
+
+    res.json({
+      success: true,
+      message: 'Variable metadata updated successfully',
+    });
+  } catch (error) {
+    logger.error(`Update variable metadata error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'UPDATE_VARIABLE_ERROR',
         message: error.message,
       },
     });

@@ -146,6 +146,42 @@ class ApiService {
     return response.data;
   }
 
+  async getConnectorVariables(id: string) {
+    const response = await this.api.get(`/connectors/${id}/variables`);
+    return response.data;
+  }
+
+  async getAllConnectorVariables() {
+    const response = await this.api.get('/policies/builder/variables');
+    return response.data;
+  }
+
+  async executeConnector(id: string, applicationId: string, requestPayload: any) {
+    const response = await this.api.post(`/connectors/${id}/execute`, {
+      applicationId,
+      requestPayload,
+    });
+    return response.data;
+  }
+
+  async storeManualSample(id: string, requestPayload: any, responsePayload: any) {
+    const response = await this.api.post(`/connectors/${id}/sample`, {
+      requestPayload,
+      responsePayload,
+    });
+    return response.data;
+  }
+
+  async refreshConnectorVariables(id: string) {
+    const response = await this.api.post(`/connectors/${id}/variables/refresh`);
+    return response.data;
+  }
+
+  async getApplicationConnectorData(applicationId: string) {
+    const response = await this.api.get(`/policies/applications/${applicationId}/connector-data`);
+    return response.data;
+  }
+
   // Manual Review endpoints
   async getManualReviews(params?: any) {
     const response = await this.api.get('/manual-review', { params });

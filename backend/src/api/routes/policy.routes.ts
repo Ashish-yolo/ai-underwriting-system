@@ -10,6 +10,8 @@ import {
   clonePolicy,
   validatePolicy,
 } from '../../services/policy.service';
+import { getAllAvailableVariables } from '../../services/variable-registry.service';
+import { getApplicationConnectorData } from '../../services/connector-execution.service';
 import logger from '../../utils/logger';
 import { pool } from '../../config/database';
 
@@ -549,6 +551,49 @@ router.post('/:id/test', authenticate, requireRole(['admin', 'policy_creator']),
     });
   } catch (error: any) {
     logger.error(`Test policy error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Get all available variables for policy builder
+ * GET /api/policies/builder/variables
+ */
+router.get('/builder/variables', authenticate, async (req: Request, res: Response) => {
+  try {
+    const variables = await getAllAvailableVariables();
+
+    res.json({
+      success: true,
+      data: {
+        connectors: variables,
+      },
+    });
+  } catch (error: any) {
+    logger.error(`Get policy builder variables error: ${error.message}`);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * Get application connector data
+ * GET /api/applications/:applicationId/connector-data
+ */
+router.get('/applications/:applicationId/connector-data', authenticate, async (req: Request, res: Response) => {
+  try {
+    const { applicationId } = req.params;
+    const { connectorId } = req.query;
+
+    const data = await getApplicationConnectorData(applicationId, connectorId as string);
+
+    res.json({
+      success: true,
+      data: {
+        connectors: Array.isArray(data) ? data : [data],
+      },
+    });
+  } catch (error: any) {
+    logger.error(`Get application connector data error: ${error.message}`);
     res.status(500).json({ success: false, error: error.message });
   }
 });
