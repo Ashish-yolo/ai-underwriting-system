@@ -313,8 +313,22 @@ export const validatePolicy = async (workflowJson: any, strict: boolean = false)
       // Validate that strategy nodes have proper configuration
       const strategyNodes = nodes.filter((n: any) => n.type === 'strategy');
       strategyNodes.forEach((node: any) => {
-        if (!node.data?.defaultDecision) {
-          errors.push(`Strategy node "${node.data?.label || node.id}" must have a default decision`);
+        // Check that strategy nodes have at least one condition
+        if (!node.data?.conditions || node.data.conditions.length === 0) {
+          errors.push(`Strategy node "${node.data?.label || node.id}" must have at least one condition`);
+        } else {
+          // Validate each condition has required fields
+          node.data.conditions.forEach((condition: any, index: number) => {
+            if (!condition.variable) {
+              errors.push(`Strategy node "${node.data?.label || node.id}" condition ${index + 1} is missing a variable`);
+            }
+            if (!condition.operator) {
+              errors.push(`Strategy node "${node.data?.label || node.id}" condition ${index + 1} is missing an operator`);
+            }
+            if (!condition.decision) {
+              errors.push(`Strategy node "${node.data?.label || node.id}" condition ${index + 1} is missing a decision`);
+            }
+          });
         }
       });
     }
