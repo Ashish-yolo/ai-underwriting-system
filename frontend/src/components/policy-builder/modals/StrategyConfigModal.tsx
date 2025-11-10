@@ -15,31 +15,25 @@ interface StrategyConfigModalProps {
   isOpen: boolean;
   nodeName: string;
   conditions: Condition[];
-  defaultDecision?: 'Approved' | 'Reject' | 'Manual Check';
   onClose: () => void;
-  onSave: (nodeName: string, conditions: Condition[], defaultDecision: 'Approved' | 'Reject' | 'Manual Check') => void;
+  onSave: (nodeName: string, conditions: Condition[]) => void;
 }
 
 export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
   isOpen,
   nodeName,
   conditions: initialConditions,
-  defaultDecision: initialDefaultDecision,
   onClose,
   onSave,
 }) => {
   const [conditions, setConditions] = useState<Condition[]>(initialConditions);
   const [editingName, setEditingName] = useState(false);
   const [tempName, setTempName] = useState(nodeName);
-  const [defaultDecision, setDefaultDecision] = useState<'Approved' | 'Reject' | 'Manual Check'>(
-    initialDefaultDecision || 'Reject'
-  );
 
   useEffect(() => {
     setConditions(initialConditions);
     setTempName(nodeName);
-    setDefaultDecision(initialDefaultDecision || 'Reject');
-  }, [initialConditions, nodeName, initialDefaultDecision, isOpen]);
+  }, [initialConditions, nodeName, isOpen]);
 
   if (!isOpen) return null;
 
@@ -83,8 +77,8 @@ export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
       return;
     }
 
-    // Save with node name, conditions, and default decision
-    onSave(tempName, conditions, defaultDecision);
+    // Save with node name and conditions only (no defaultDecision)
+    onSave(tempName, conditions);
   };
 
   return (
@@ -186,60 +180,6 @@ export const StrategyConfigModal: React.FC<StrategyConfigModalProps> = ({
                 <PlusIcon className="w-5 h-5" />
                 <span className="font-medium">Add Condition</span>
               </button>
-            </div>
-
-            {/* Default Decision Selector */}
-            <div className="border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                Default Decision (when no conditions match):
-              </h3>
-              <div className="flex gap-3">
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="defaultDecision"
-                    value="Approved"
-                    checked={defaultDecision === 'Approved'}
-                    onChange={(e) => setDefaultDecision(e.target.value as 'Approved')}
-                    className="sr-only peer"
-                  />
-                  <div className="border-2 border-gray-300 rounded-lg p-3 text-center transition-all
-                                peer-checked:border-green-500 peer-checked:bg-green-50 peer-checked:text-green-700
-                                hover:border-green-400">
-                    <span className="font-medium">Approved</span>
-                  </div>
-                </label>
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="defaultDecision"
-                    value="Reject"
-                    checked={defaultDecision === 'Reject'}
-                    onChange={(e) => setDefaultDecision(e.target.value as 'Reject')}
-                    className="sr-only peer"
-                  />
-                  <div className="border-2 border-gray-300 rounded-lg p-3 text-center transition-all
-                                peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700
-                                hover:border-red-400">
-                    <span className="font-medium">Reject</span>
-                  </div>
-                </label>
-                <label className="flex-1 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="defaultDecision"
-                    value="Manual Check"
-                    checked={defaultDecision === 'Manual Check'}
-                    onChange={(e) => setDefaultDecision(e.target.value as 'Manual Check')}
-                    className="sr-only peer"
-                  />
-                  <div className="border-2 border-gray-300 rounded-lg p-3 text-center transition-all
-                                peer-checked:border-yellow-500 peer-checked:bg-yellow-50 peer-checked:text-yellow-700
-                                hover:border-yellow-400">
-                    <span className="font-medium">Manual Check</span>
-                  </div>
-                </label>
-              </div>
             </div>
 
             {/* Decision Logic Info */}
