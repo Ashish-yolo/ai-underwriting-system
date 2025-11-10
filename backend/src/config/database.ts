@@ -6,32 +6,20 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // PostgreSQL Connection Pool
-// Priority: Use DATABASE_URL if available, otherwise use individual config
-const databaseUrl = process.env.DATABASE_URL;
-
-export const pool = databaseUrl
-  ? new Pool({
-      connectionString: databaseUrl,
-      ssl: process.env.NODE_ENV === 'production'
-        ? { rejectUnauthorized: false }
-        : false,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-    })
-  : new Pool({
-      host: '3.227.209.82', // Fallback: Resolved IPv4 address for aws-1-us-east-1.pooler.supabase.com
-      port: 6543,
-      database: 'postgres',
-      user: 'postgres.glejgqtveeywjppbsxxv',
-      password: 'Ashi08gmail.com',
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
-      ssl: {
-        rejectUnauthorized: false
-      },
-    });
+// Using IPv4 address directly to avoid IPv6 connection issues
+export const pool = new Pool({
+  host: '3.227.209.82', // Resolved IPv4 address for aws-1-us-east-1.pooler.supabase.com
+  port: 6543,
+  database: 'postgres',
+  user: 'postgres.glejgqtveeywjppbsxxv',
+  password: 'Ashi08gmail.com',
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000,
+  ssl: {
+    rejectUnauthorized: false
+  },
+});
 
 // Test PostgreSQL connection
 pool.on('connect', () => {
