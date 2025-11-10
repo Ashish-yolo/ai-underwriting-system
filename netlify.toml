@@ -1,0 +1,52 @@
+# Netlify Configuration for Frontend Deployment
+
+[build]
+  # Build command - install all dependencies and build frontend
+  command = "npm install && npm run build:frontend"
+
+  # Publish directory - where the built frontend files are
+  publish = "frontend/dist"
+
+  # Base directory
+  base = "."
+
+[build.environment]
+  # Node version
+  NODE_VERSION = "18.17.0"
+
+  # NPM version
+  NPM_VERSION = "9.6.7"
+
+# Redirect all routes to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# API proxy to backend (if needed)
+[[redirects]]
+  from = "/api/*"
+  to = "https://your-backend-url.onrender.com/api/:splat"
+  status = 200
+  force = true
+  headers = {X-From = "Netlify"}
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Environment variables (set these in Netlify dashboard)
+# VITE_API_URL = your backend API URL
+# VITE_APP_NAME = AI Underwriting System
