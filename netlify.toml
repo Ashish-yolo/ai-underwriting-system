@@ -1,14 +1,14 @@
 # Netlify Configuration for Frontend Deployment
 
 [build]
-  # Build command - install all dependencies and build frontend
-  command = "npm install && npm run build:frontend"
+  # Base directory for the frontend
+  base = "frontend"
 
-  # Publish directory - where the built frontend files are
-  publish = "frontend/dist"
+  # Build command - install dependencies and build
+  command = "npm install && npm run build"
 
-  # Base directory
-  base = "."
+  # Publish directory - where the built files are (relative to base)
+  publish = "dist"
 
 [build.environment]
   # Node version
