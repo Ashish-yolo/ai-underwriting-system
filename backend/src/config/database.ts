@@ -6,9 +6,9 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // PostgreSQL Connection Pool
-// Using IPv4 address directly to avoid IPv6 connection issues
+// Using hostname to allow automatic failover between multiple IPs
 export const pool = new Pool({
-  host: '3.227.209.82', // Resolved IPv4 address for aws-1-us-east-1.pooler.supabase.com
+  host: 'aws-1-us-east-1.pooler.supabase.com',
   port: 6543,
   database: 'postgres',
   user: 'postgres.glejgqtveeywjppbsxxv',
