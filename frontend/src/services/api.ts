@@ -29,11 +29,23 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
+        // Only logout on 401 if it's an authentication error, not other errors
         if (error.response?.status === 401) {
-          // Unauthorized - clear token and redirect to login
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('user');
-          window.location.href = '/login';
+          const errorCode = error.response?.data?.error?.code;
+          const currentPath = window.location.pathname;
+
+          // Don't redirect if already on login page
+          if (currentPath === '/login') {
+            return Promise.reject(error);
+          }
+
+          // Only redirect to login for actual auth errors
+          if (errorCode === 'UNAUTHORIZED' || errorCode === 'INVALID_TOKEN') {
+            console.log('Authentication required - redirecting to login');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }
