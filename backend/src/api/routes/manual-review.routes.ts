@@ -32,8 +32,8 @@ router.get('/', authenticate, requireRole(['admin', 'reviewer']), async (req: Re
         mr.review_decision,
         mr.review_notes,
         p.name as policy_name,
-        u.name as assigned_to_name,
-        reviewer.name as reviewed_by_name
+        u.full_name as assigned_to_name,
+        reviewer.full_name as reviewed_by_name
       FROM manual_reviews mr
       LEFT JOIN policies p ON mr.policy_id = p.id
       LEFT JOIN users u ON mr.assigned_to = u.id
@@ -95,8 +95,8 @@ router.get('/:id', authenticate, requireRole(['admin', 'reviewer']), async (req:
         mr.*,
         p.name as policy_name,
         p.workflow_json,
-        u.name as assigned_to_name,
-        reviewer.name as reviewed_by_name
+        u.full_name as assigned_to_name,
+        reviewer.full_name as reviewed_by_name
        FROM manual_reviews mr
        LEFT JOIN policies p ON mr.policy_id = p.id
        LEFT JOIN users u ON mr.assigned_to = u.id
@@ -113,7 +113,7 @@ router.get('/:id', authenticate, requireRole(['admin', 'reviewer']), async (req:
     const activities = await pool.query(
       `SELECT
         ra.*,
-        u.name as user_name
+        u.full_name as user_name
        FROM review_activities ra
        LEFT JOIN users u ON ra.user_id = u.id
        WHERE ra.review_id = $1
