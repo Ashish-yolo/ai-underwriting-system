@@ -11,6 +11,7 @@ const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
     // Production: parse DATABASE_URL and force SSL with rejectUnauthorized: false
     const url = new URL(process.env.DATABASE_URL);
+    console.log(`📊 Using DATABASE_URL with host: ${url.hostname}, port: ${url.port || 5432}`);
     return {
       host: url.hostname,
       port: parseInt(url.port) || 5432,
@@ -20,6 +21,8 @@ const getDatabaseConfig = () => {
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      // Force IPv4 by setting family to 4
+      family: 4,
       ssl: {
         rejectUnauthorized: false // Always disable strict SSL verification
       },
@@ -27,6 +30,7 @@ const getDatabaseConfig = () => {
   }
 
   // Local development
+  console.log('📊 Using hardcoded database configuration for local development');
   return {
     host: 'aws-1-us-east-1.pooler.supabase.com',
     port: 5432,
