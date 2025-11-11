@@ -29,8 +29,8 @@ const getDatabaseConfig = () => {
     };
   }
 
-  // Local development
-  console.log('📊 Using hardcoded database configuration for local development');
+  // Local development (or production fallback if DATABASE_URL not set)
+  console.log('📊 Using hardcoded database configuration');
   return {
     host: 'aws-1-us-east-1.pooler.supabase.com',
     port: 5432,
@@ -40,6 +40,8 @@ const getDatabaseConfig = () => {
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    // Force IPv4 to prevent IPv6 ENETUNREACH errors
+    family: 4,
     ssl: {
       rejectUnauthorized: false
     },
