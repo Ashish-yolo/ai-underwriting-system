@@ -2,8 +2,12 @@ import { Pool } from 'pg';
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
 import dotenv from 'dotenv';
+import * as dns from 'dns';
 
 dotenv.config();
+
+// Force IPv4 resolution globally
+dns.setDefaultResultOrder('ipv4first');
 
 // PostgreSQL Connection Pool
 // Use DATABASE_URL in production, fall back to hardcoded values for local development
