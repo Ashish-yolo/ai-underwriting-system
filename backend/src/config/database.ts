@@ -9,30 +9,33 @@ dotenv.config();
 // Use DATABASE_URL in production, fall back to hardcoded values for local development
 const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
-    // Production: parse DATABASE_URL and use direct IPv4 to bypass DNS
+    // Production: parse DATABASE_URL and use hostname with port 6543 (pooler)
     const url = new URL(process.env.DATABASE_URL);
-    console.log(`📊 Using DATABASE_URL with IPv4 override: 3.227.209.82:${url.port || 5432}`);
+    const usePooler = process.env.NODE_ENV === 'production';
+    const host = url.hostname;
+    const port = usePooler ? 6543 : (parseInt(url.port) || 5432);
+
+    console.log(`📊 Using DATABASE_URL: ${host}:${port} (pooler: ${usePooler})`);
     return {
-      host: '3.227.209.82', // Force IPv4 address instead of hostname
-      port: parseInt(url.port) || 5432,
-      database: url.pathname.slice(1), // Remove leading /
+      host,
+      port,
+      database: url.pathname.slice(1),
       user: url.username,
       password: url.password,
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
       ssl: {
-        rejectUnauthorized: false // Always disable strict SSL verification
+        rejectUnauthorized: false
       },
     };
   }
 
-  // Local development (or production fallback if DATABASE_URL not set)
-  // Use IPv4 address directly to bypass DNS resolution issues
-  console.log('📊 Using hardcoded database configuration with IPv4 address');
+  // Local development fallback
+  console.log('📊 Using hardcoded database configuration');
   return {
-    host: '3.227.209.82', // Direct IPv4 address for aws-1-us-east-1.pooler.supabase.com
-    port: 5432,
+    host: 'aws-1-us-east-1.pooler.supabase.com',
+    port: 6543, // Use pooler port for external connections
     database: 'postgres',
     user: 'postgres.glejgqtveeywjppbsxxv',
     password: 'Ashi08gmail.com',
