@@ -11,10 +11,17 @@ const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
     // Production: parse DATABASE_URL
     const url = new URL(process.env.DATABASE_URL);
-    const host = url.hostname;
+    let host = url.hostname;
     const port = parseInt(url.port) || 5432;
 
-    console.log(`📊 Using DATABASE_URL: ${host}:${port}`);
+    // If DB_HOST_IPV4 is set, use it to bypass IPv6 DNS issues
+    if (process.env.DB_HOST_IPV4) {
+      host = process.env.DB_HOST_IPV4;
+      console.log(`📊 Using DB_HOST_IPV4 override: ${host}:${port}`);
+    } else {
+      console.log(`📊 Using DATABASE_URL: ${host}:${port}`);
+    }
+
     return {
       host,
       port,
@@ -24,10 +31,8 @@ const getDatabaseConfig = () => {
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
-      // Force IPv4 by using custom DNS lookup
-      ...(process.env.NODE_ENV === 'production' && {
-        options: '-c client_encoding=UTF8'
-      }),
+      keepAlive: true,
+      keepAliveInitialDelayMillis: 10000,
       ssl: {
         rejectUnauthorized: false
       },

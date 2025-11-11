@@ -1,40 +1,35 @@
 # Fix Production Database Connection on Render
 
 ## Problem
-Production login is failing with IPv6 ENETUNREACH errors because the DATABASE_URL environment variable on Render is using the wrong port.
+Production login is failing with IPv6 ENETUNREACH errors. Node.js on Render is resolving the Supabase hostname to IPv6 addresses which are unreachable.
 
 ## Root Cause
-- Port **5432** is for direct PostgreSQL connections (blocked from external IPs like Render)
-- Port **6543** is the Transaction Pooler/pgBouncer (designed for external connections)
+- Node.js DNS resolver prefers IPv6 when available
+- Render's infrastructure cannot connect to Supabase's IPv6 addresses
+- Standard DNS override methods (`setDefaultResultOrder`) don't work on Render's Node.js version
 
 ## Solution Steps
 
-### 1. Update Render Environment Variable
+### 1. Add IPv4 Override Environment Variable on Render
 
-Go to your Render dashboard and update the DATABASE_URL:
+Go to your Render dashboard and add a new environment variable:
 
-**Current (incorrect) value:**
-```
-postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require
-```
+**Variable Name:** `DB_HOST_IPV4`
+**Value:** `3.227.209.82`
 
-**New (correct) value:**
-```
-postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@aws-1-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require
-```
+This forces the connection to use the IPv4 address directly, bypassing DNS resolution.
 
-**Notice:** Only the port changed from `5432` to `6543`
-
-### 2. How to Update on Render
+### 2. How to Add Environment Variable on Render
 
 1. Go to https://dashboard.render.com
 2. Select your service: `ai-underwriting-system`
 3. Click on **Environment** in the left sidebar
-4. Find the `DATABASE_URL` variable
-5. Click **Edit** next to it
-6. Change the port in the URL from `5432` to `6543`
-7. Click **Save Changes**
-8. Render will automatically redeploy your service
+4. Click **Add Environment Variable**
+5. Enter:
+   - **Key:** `DB_HOST_IPV4`
+   - **Value:** `3.227.209.82`
+6. Click **Save Changes**
+7. Render will automatically redeploy your service
 
 ### 3. Verify the Fix
 
@@ -67,22 +62,22 @@ You can also check the Render logs to confirm the connection:
 
 1. Go to your service on Render
 2. Click **Logs** in the left sidebar
-3. Look for: `📊 Using DATABASE_URL: aws-1-us-east-1.pooler.supabase.com:6543 (pooler: true)`
+3. Look for: `📊 Using DB_HOST_IPV4 override: 3.227.209.82:5432`
 4. Look for: `✅ Connected to PostgreSQL database`
 
 ## Technical Details
 
 The code in `src/config/database.ts` now:
-- Detects production environment via `NODE_ENV=production`
-- Automatically uses port 6543 (pooler) in production
-- Falls back to the hardcoded configuration with port 6543
+- Checks for `DB_HOST_IPV4` environment variable
+- If set, uses that IPv4 address directly instead of DNS hostname
+- Bypasses all DNS resolution, avoiding IPv6 completely
 
 This ensures external connections from Render work properly.
 
 ## Why Previous Fixes Didn't Work
 
 1. **Adding `family: 4`**: Node.js pg library still resolved to IPv6
-2. **Using direct IPv4 `3.227.209.82`**: Port 5432 blocks external connections
-3. **Port 6543 in code only**: Render's DATABASE_URL still had port 5432
+2. **`setDefaultResultOrder('ipv4first')`**: Not supported on Render's Node.js version
+3. **Async DNS resolution**: Caused pool initialization timeout
 
-The DATABASE_URL environment variable takes precedence, so we must update it on Render.
+The IPv4 override environment variable bypasses DNS entirely.
