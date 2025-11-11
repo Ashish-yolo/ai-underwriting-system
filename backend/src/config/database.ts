@@ -13,13 +13,12 @@ dns.setDefaultResultOrder('ipv4first');
 // Use DATABASE_URL in production, fall back to hardcoded values for local development
 const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
-    // Production: parse DATABASE_URL and use hostname with port 6543 (pooler)
+    // Production: parse DATABASE_URL and use port from URL
     const url = new URL(process.env.DATABASE_URL);
-    const usePooler = process.env.NODE_ENV === 'production';
     const host = url.hostname;
-    const port = usePooler ? 6543 : (parseInt(url.port) || 5432);
+    const port = parseInt(url.port) || 5432;
 
-    console.log(`📊 Using DATABASE_URL: ${host}:${port} (pooler: ${usePooler})`);
+    console.log(`📊 Using DATABASE_URL: ${host}:${port}`);
     return {
       host,
       port,
@@ -39,7 +38,7 @@ const getDatabaseConfig = () => {
   console.log('📊 Using hardcoded database configuration');
   return {
     host: 'aws-1-us-east-1.pooler.supabase.com',
-    port: 6543, // Use pooler port for external connections
+    port: 5432,
     database: 'postgres',
     user: 'postgres.glejgqtveeywjppbsxxv',
     password: 'Ashi08gmail.com',
