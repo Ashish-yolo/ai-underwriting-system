@@ -30,9 +30,10 @@ const getDatabaseConfig = () => {
   }
 
   // Local development (or production fallback if DATABASE_URL not set)
-  console.log('📊 Using hardcoded database configuration');
+  // Use IPv4 address directly to bypass DNS resolution issues
+  console.log('📊 Using hardcoded database configuration with IPv4 address');
   return {
-    host: 'aws-1-us-east-1.pooler.supabase.com',
+    host: '3.227.209.82', // Direct IPv4 address for aws-1-us-east-1.pooler.supabase.com
     port: 5432,
     database: 'postgres',
     user: 'postgres.glejgqtveeywjppbsxxv',
@@ -40,8 +41,6 @@ const getDatabaseConfig = () => {
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
-    // Force IPv4 to prevent IPv6 ENETUNREACH errors
-    family: 4,
     ssl: {
       rejectUnauthorized: false
     },
