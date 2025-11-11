@@ -6,20 +6,43 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // PostgreSQL Connection Pool
-// Using direct PostgreSQL connection on port 5432
-export const pool = new Pool({
-  host: 'aws-1-us-east-1.pooler.supabase.com',
-  port: 5432,
-  database: 'postgres',
-  user: 'postgres.glejgqtveeywjppbsxxv',
-  password: 'Ashi08gmail.com',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-  ssl: {
-    rejectUnauthorized: false
-  },
-});
+// Use DATABASE_URL in production, fall back to hardcoded values for local development
+const getDatabaseConfig = () => {
+  if (process.env.DATABASE_URL) {
+    // Production: parse DATABASE_URL and force SSL with rejectUnauthorized: false
+    const url = new URL(process.env.DATABASE_URL);
+    return {
+      host: url.hostname,
+      port: parseInt(url.port) || 5432,
+      database: url.pathname.slice(1), // Remove leading /
+      user: url.username,
+      password: url.password,
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+      ssl: {
+        rejectUnauthorized: false // Always disable strict SSL verification
+      },
+    };
+  }
+
+  // Local development
+  return {
+    host: 'aws-1-us-east-1.pooler.supabase.com',
+    port: 5432,
+    database: 'postgres',
+    user: 'postgres.glejgqtveeywjppbsxxv',
+    password: 'Ashi08gmail.com',
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    ssl: {
+      rejectUnauthorized: false
+    },
+  };
+};
+
+export const pool = new Pool(getDatabaseConfig());
 
 // Test PostgreSQL connection
 pool.on('connect', () => {
