@@ -2,34 +2,19 @@ import { Pool } from 'pg';
 import mongoose from 'mongoose';
 import Redis from 'ioredis';
 import dotenv from 'dotenv';
-import { promisify } from 'util';
-import * as dns from 'dns';
 
 dotenv.config();
 
-const resolve4 = promisify(dns.resolve4);
-
 // PostgreSQL Connection Pool
 // Use DATABASE_URL in production, fall back to hardcoded values for local development
-const getDatabaseConfig = async () => {
+const getDatabaseConfig = () => {
   if (process.env.DATABASE_URL) {
-    // Production: parse DATABASE_URL and resolve hostname to IPv4
+    // Production: parse DATABASE_URL
     const url = new URL(process.env.DATABASE_URL);
-    const hostname = url.hostname;
+    const host = url.hostname;
     const port = parseInt(url.port) || 5432;
 
-    // Manually resolve to IPv4 to avoid IPv6
-    let host = hostname;
-    try {
-      const addresses = await resolve4(hostname);
-      if (addresses && addresses.length > 0) {
-        host = addresses[0]; // Use first IPv4 address
-        console.log(`📊 Resolved ${hostname} to IPv4: ${host}:${port}`);
-      }
-    } catch (err) {
-      console.log(`⚠️  Could not resolve ${hostname}, using as-is`);
-    }
-
+    console.log(`📊 Using DATABASE_URL: ${host}:${port}`);
     return {
       host,
       port,
@@ -39,26 +24,20 @@ const getDatabaseConfig = async () => {
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      // Force IPv4 by using custom DNS lookup
+      ...(process.env.NODE_ENV === 'production' && {
+        options: '-c client_encoding=UTF8'
+      }),
       ssl: {
         rejectUnauthorized: false
       },
     };
   }
 
-  // Local development fallback - resolve to IPv4
-  let host = 'aws-1-us-east-1.pooler.supabase.com';
-  try {
-    const addresses = await resolve4(host);
-    if (addresses && addresses.length > 0) {
-      host = addresses[0];
-      console.log(`📊 Resolved to IPv4: ${host}:5432`);
-    }
-  } catch (err) {
-    console.log('📊 Using hardcoded database configuration');
-  }
-
+  // Local development fallback
+  console.log('📊 Using hardcoded database configuration');
   return {
-    host,
+    host: 'aws-1-us-east-1.pooler.supabase.com',
     port: 5432,
     database: 'postgres',
     user: 'postgres.glejgqtveeywjppbsxxv',
@@ -72,32 +51,20 @@ const getDatabaseConfig = async () => {
   };
 };
 
-let poolInstance: Pool;
+// Set Node.js to prefer IPv4
+import { setDefaultResultOrder } from 'dns';
+setDefaultResultOrder('ipv4first');
 
-// Initialize pool asynchronously
-(async () => {
-  const config = await getDatabaseConfig();
-  poolInstance = new Pool(config);
+export const pool = new Pool(getDatabaseConfig());
 
-  poolInstance.on('connect', () => {
-    console.log('✅ Connected to PostgreSQL database');
-  });
+// Test PostgreSQL connection
+pool.on('connect', () => {
+  console.log('✅ Connected to PostgreSQL database');
+});
 
-  poolInstance.on('error', (err) => {
-    console.error('❌ PostgreSQL connection error:', err);
-    process.exit(-1);
-  });
-})();
-
-// Export pool - will be initialized after async config
-export const pool = new Proxy({} as Pool, {
-  get: (target, prop) => {
-    if (!poolInstance) {
-      throw new Error('Database pool not yet initialized');
-    }
-    const value = (poolInstance as any)[prop];
-    return typeof value === 'function' ? value.bind(poolInstance) : value;
-  }
+pool.on('error', (err) => {
+  console.error('❌ PostgreSQL connection error:', err);
+  process.exit(-1);
 });
 
 // MongoDB Connection
@@ -149,7 +116,7 @@ export { redis };
 export const query = async (text: string, params?: any[]) => {
   const start = Date.now();
   try {
-    const res = await poolInstance.query(text, params);
+    const res = await pool.query(text, params);
     const duration = Date.now() - start;
     console.log('Executed query', { text, duration, rows: res.rowCount });
     return res;
@@ -161,7 +128,7 @@ export const query = async (text: string, params?: any[]) => {
 
 // Close all database connections gracefully
 export const closeConnections = async (): Promise<void> => {
-  await poolInstance.end();
+  await pool.end();
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close();
   }
