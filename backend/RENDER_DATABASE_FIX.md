@@ -12,17 +12,19 @@ Production login is failing with IPv6 ENETUNREACH errors. Node.js on Render is r
 
 ### 1. Update DATABASE_URL on Render
 
-The connection string needs to specify pgbouncer mode and use port 6543:
+Try the **direct connection** first (bypasses pooler/load balancer):
 
-**Correct DATABASE_URL:**
+**Option 1: Direct Connection (RECOMMENDED)**
 ```
-postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@db.glejgqtveeywjppbsxxv.supabase.co:5432/postgres
 ```
 
-Key parameters:
-- Port **6543** (Transaction Pooler)
-- `pgbouncer=true` - Uses pgBouncer connection pooler
-- `connection_limit=1` - Prevents connection pool exhaustion
+**Option 2: Pooler Connection (if Option 1 fails)**
+```
+postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@aws-1-us-east-1.pooler.supabase.com:6543/postgres
+```
+
+The direct connection (db.glejgqtveeywjppbsxxv.supabase.co) avoids load balancer issues that were causing ECONNREFUSED errors.
 
 ### 2. Step-by-Step Instructions
 
@@ -30,11 +32,11 @@ Key parameters:
 2. Select your service: `ai-underwriting-system`
 3. Click on **Environment** in the left sidebar
 4. Find `DATABASE_URL` variable and click **Edit**
-5. Replace with:
+5. Replace with the **direct connection** URL:
    ```
-   postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@aws-1-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+   postgresql://postgres.glejgqtveeywjppbsxxv:Ashi08gmail.com@db.glejgqtveeywjppbsxxv.supabase.co:5432/postgres
    ```
-6. **Remove DB_HOST_IPV4** if you added it (it causes issues with load balancer)
+6. **Remove DB_HOST_IPV4** if you added it
 7. Click **Save Changes**
 8. Render will automatically redeploy your service
 
