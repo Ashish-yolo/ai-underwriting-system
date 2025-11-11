@@ -10,10 +10,10 @@ dotenv.config();
 const getDatabaseConfig = () => {
   // Hardcoded production config to bypass all DNS issues
   if (process.env.NODE_ENV === 'production') {
-    console.log('📊 Using production hardcoded config: pooler IPv4');
+    console.log('📊 Using production hardcoded config: pooler IPv4 port 5432');
     return {
       host: '3.227.209.82', // aws-1-us-east-1.pooler.supabase.com IPv4
-      port: 6543,
+      port: 5432,
       database: 'postgres',
       user: 'postgres.glejgqtveeywjppbsxxv',
       password: 'Ashi08gmail.com',
