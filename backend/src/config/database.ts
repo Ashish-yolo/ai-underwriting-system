@@ -6,10 +6,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // PostgreSQL Connection Pool
-// Using hostname to allow automatic failover between multiple IPs
+// Using direct PostgreSQL connection on port 5432
 export const pool = new Pool({
   host: 'aws-1-us-east-1.pooler.supabase.com',
-  port: 6543,
+  port: 5432,
   database: 'postgres',
   user: 'postgres.glejgqtveeywjppbsxxv',
   password: 'Ashi08gmail.com',
