@@ -10,26 +10,40 @@ Production login is failing with IPv6 ENETUNREACH errors. Node.js on Render is r
 
 ## Solution Steps
 
-### 1. Add IPv4 Override Environment Variable on Render
+### 1. Update Environment Variables on Render
 
-Go to your Render dashboard and add a new environment variable:
+Go to your Render dashboard and update these environment variables:
 
-**Variable Name:** `DB_HOST_IPV4`
-**Value:** `3.227.209.82`
+**A. Update DATABASE_URL to use port 6543:**
+- Find `DATABASE_URL` variable
+- Change from: `...supabase.com:5432/postgres...`
+- Change to: `...supabase.com:6543/postgres...`
 
-This forces the connection to use the IPv4 address directly, bypassing DNS resolution.
+**B. Add IPv4 Override:**
+- Add new variable: `DB_HOST_IPV4`
+- Value: `3.227.209.82`
 
-### 2. How to Add Environment Variable on Render
+Port 6543 is Supabase's Transaction Pooler which allows external connections.
+Port 5432 is blocked for external connections.
+
+### 2. Step-by-Step Instructions
 
 1. Go to https://dashboard.render.com
 2. Select your service: `ai-underwriting-system`
 3. Click on **Environment** in the left sidebar
-4. Click **Add Environment Variable**
-5. Enter:
+
+**Update DATABASE_URL:**
+4. Find `DATABASE_URL` variable and click **Edit**
+5. Change the port from `:5432` to `:6543` in the URL
+6. Should look like: `postgresql://...@...supabase.com:6543/postgres?sslmode=require`
+
+**Add DB_HOST_IPV4:**
+7. Click **Add Environment Variable**
+8. Enter:
    - **Key:** `DB_HOST_IPV4`
    - **Value:** `3.227.209.82`
-6. Click **Save Changes**
-7. Render will automatically redeploy your service
+9. Click **Save Changes**
+10. Render will automatically redeploy your service
 
 ### 3. Verify the Fix
 
@@ -62,7 +76,7 @@ You can also check the Render logs to confirm the connection:
 
 1. Go to your service on Render
 2. Click **Logs** in the left sidebar
-3. Look for: `📊 Using DB_HOST_IPV4 override: 3.227.209.82:5432`
+3. Look for: `📊 Using DB_HOST_IPV4 override: 3.227.209.82:6543`
 4. Look for: `✅ Connected to PostgreSQL database`
 
 ## Technical Details
