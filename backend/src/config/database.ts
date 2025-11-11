@@ -8,8 +8,27 @@ dotenv.config();
 // PostgreSQL Connection Pool
 // Use DATABASE_URL in production, fall back to hardcoded values for local development
 const getDatabaseConfig = () => {
+  // Hardcoded production config to bypass all DNS issues
+  if (process.env.NODE_ENV === 'production') {
+    console.log('📊 Using production hardcoded config: pooler IPv4');
+    return {
+      host: '3.227.209.82', // aws-1-us-east-1.pooler.supabase.com IPv4
+      port: 6543,
+      database: 'postgres',
+      user: 'postgres.glejgqtveeywjppbsxxv',
+      password: 'Ashi08gmail.com',
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
+      keepAlive: true,
+      ssl: {
+        rejectUnauthorized: false
+      },
+    };
+  }
+
   if (process.env.DATABASE_URL) {
-    // Production: parse DATABASE_URL
+    // Development: parse DATABASE_URL
     const url = new URL(process.env.DATABASE_URL);
     const host = url.hostname;
     const port = parseInt(url.port) || 5432;
