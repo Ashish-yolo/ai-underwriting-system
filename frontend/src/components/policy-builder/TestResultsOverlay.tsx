@@ -9,6 +9,15 @@ interface TestResultsOverlayProps {
 export const TestResultsOverlay: React.FC<TestResultsOverlayProps> = ({ results }) => {
   if (!results) return null;
 
+  // Collect all failed conditions and manual check reasons
+  const allFailedConditions: string[] = [];
+  const allManualCheckReasons: string[] = [];
+
+  results.executionTrace.forEach(trace => {
+    allFailedConditions.push(...trace.failedConditions);
+    allManualCheckReasons.push(...trace.manualCheckReasons);
+  });
+
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl pointer-events-none">
       <div className={`rounded-lg shadow-2xl p-4 pointer-events-auto ${
@@ -39,6 +48,33 @@ export const TestResultsOverlay: React.FC<TestResultsOverlayProps> = ({ results 
             Final Decision: {results.finalDecision}
           </h3>
         </div>
+
+        {/* Reasons for Rejection or Manual Review */}
+        {results.finalDecision === 'Rejected' && allFailedConditions.length > 0 && (
+          <div className="mb-3 p-3 bg-red-100 rounded-lg border border-red-300">
+            <h4 className="text-sm font-semibold text-red-900 mb-2">Rejection Reasons:</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {allFailedConditions.map((condition, idx) => (
+                <li key={idx} className="text-sm text-red-800">
+                  {condition}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {results.finalDecision === 'Manual Review' && allManualCheckReasons.length > 0 && (
+          <div className="mb-3 p-3 bg-yellow-100 rounded-lg border border-yellow-300">
+            <h4 className="text-sm font-semibold text-yellow-900 mb-2">Manual Review Required:</h4>
+            <ul className="list-disc list-inside space-y-1">
+              {allManualCheckReasons.map((reason, idx) => (
+                <li key={idx} className="text-sm text-yellow-800">
+                  {reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Summary Stats Grid */}
         <div className="grid grid-cols-4 gap-3">

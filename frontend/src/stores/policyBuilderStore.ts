@@ -395,6 +395,13 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
     // Find all strategy nodes
     const strategyNodes = nodes.filter(n => n.type === 'strategy');
 
+    console.log('🔍 TEST DEBUG: Total nodes in store:', nodes.length);
+    console.log('🔍 TEST DEBUG: Strategy nodes found:', strategyNodes.length);
+    console.log('🔍 TEST DEBUG: Strategy node IDs:', strategyNodes.map(n => n.id));
+    strategyNodes.forEach(node => {
+      console.log(`🔍 TEST DEBUG: Node ${node.id} has ${node.data?.conditions?.length || 0} conditions`);
+    });
+
     // Evaluate each strategy node
     for (const node of strategyNodes) {
       const nodeData = node.data as StrategyNodeData;
@@ -412,6 +419,7 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
         const cond = conditions[i];
         const isMatch = evaluateCondition(cond, testData);
         totalConditions++;
+        console.log(`🔍 TEST DEBUG: Node ${node.id}, Condition ${i + 1}/${conditions.length}, Total count now: ${totalConditions}`);
 
         const conditionStr = `${cond.variable} ${cond.operator} ${cond.value}`;
 
@@ -526,6 +534,13 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
         manualCheckConditions,
       },
     };
+
+    console.log('🔍 TEST DEBUG: Final summary:', {
+      totalConditions,
+      passedConditions,
+      failedConditions,
+      manualCheckConditions,
+    });
 
     set({ testResults: results });
   },
