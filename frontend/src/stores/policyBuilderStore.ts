@@ -392,12 +392,23 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
     let failedConditions = 0;
     let manualCheckConditions = 0;
 
-    // Find all strategy nodes
-    const strategyNodes = nodes.filter(n => n.type === 'strategy');
+    // Find all strategy nodes and deduplicate by ID
+    const allStrategyNodes = nodes.filter(n => n.type === 'strategy');
+
+    // Deduplicate nodes by ID (in case there are duplicates in the store)
+    const nodeMap = new Map<string, typeof allStrategyNodes[0]>();
+    allStrategyNodes.forEach(node => {
+      if (!nodeMap.has(node.id)) {
+        nodeMap.set(node.id, node);
+      }
+    });
+    const strategyNodes = Array.from(nodeMap.values());
 
     console.log('🔍 TEST DEBUG: Total nodes in store:', nodes.length);
-    console.log('🔍 TEST DEBUG: Strategy nodes found:', strategyNodes.length);
+    console.log('🔍 TEST DEBUG: All strategy nodes found (before dedup):', allStrategyNodes.length);
+    console.log('🔍 TEST DEBUG: Unique strategy nodes (after dedup):', strategyNodes.length);
     console.log('🔍 TEST DEBUG: Strategy node IDs:', strategyNodes.map(n => n.id));
+    console.log('🔍 TEST DEBUG: Duplicate node IDs:', allStrategyNodes.map(n => n.id));
     strategyNodes.forEach(node => {
       console.log(`🔍 TEST DEBUG: Node ${node.id} has ${node.data?.conditions?.length || 0} conditions`);
     });

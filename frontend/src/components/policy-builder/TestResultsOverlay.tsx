@@ -9,14 +9,17 @@ interface TestResultsOverlayProps {
 export const TestResultsOverlay: React.FC<TestResultsOverlayProps> = ({ results }) => {
   if (!results) return null;
 
-  // Collect all failed conditions and manual check reasons
-  const allFailedConditions: string[] = [];
-  const allManualCheckReasons: string[] = [];
+  // Collect all failed conditions and manual check reasons (deduplicated)
+  const allFailedConditionsSet = new Set<string>();
+  const allManualCheckReasonsSet = new Set<string>();
 
   results.executionTrace.forEach(trace => {
-    allFailedConditions.push(...trace.failedConditions);
-    allManualCheckReasons.push(...trace.manualCheckReasons);
+    trace.failedConditions.forEach(c => allFailedConditionsSet.add(c));
+    trace.manualCheckReasons.forEach(r => allManualCheckReasonsSet.add(r));
   });
+
+  const allFailedConditions = Array.from(allFailedConditionsSet);
+  const allManualCheckReasons = Array.from(allManualCheckReasonsSet);
 
   return (
     <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-4xl pointer-events-none">
