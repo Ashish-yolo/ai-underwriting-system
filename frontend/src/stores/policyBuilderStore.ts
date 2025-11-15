@@ -439,12 +439,17 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
           if (cond.decision === 'Manual Check') {
             hasManualCheck = true;
             manualCheckConditions++;
-            manualCheckReasons.push(`${conditionStr} requires manual review`);
+
+            // Generate human-readable manual check reason
+            const actualValue = getNestedValue(testData, cond.variable);
+            const readableReason = generateManualCheckReason(cond, actualValue);
+
+            manualCheckReasons.push(readableReason);
             conditionsEvaluated.push({
               condition: conditionStr,
               result: true,
               decision: 'Manual Check',
-              reason: `Requires manual verification`
+              reason: readableReason
             });
           } else {
             // Approved
@@ -459,12 +464,17 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
           // Condition did NOT match - this becomes a REJECT
           hasAnyRejection = true;
           failedConditions++;
-          failedConditionsList.push(conditionStr);
+
+          // Get actual value for better error message
+          const actualValue = getNestedValue(testData, cond.variable);
+          const readableReason = generateFailureReason(cond, actualValue);
+
+          failedConditionsList.push(readableReason);
           conditionsEvaluated.push({
             condition: conditionStr,
             result: false,
             decision: 'Rejected',
-            reason: 'Condition not met'
+            reason: readableReason
           });
 
           // For AND logic, if one condition fails, stop evaluating
@@ -599,6 +609,96 @@ function evaluateCondition(condition: Condition, testData: any): boolean {
 // Helper function to get nested value from object using dot notation
 function getNestedValue(obj: any, path: string): any {
   return path.split('.').reduce((current, key) => current?.[key], obj);
+}
+
+// Helper function to generate human-readable failure reasons
+function generateFailureReason(condition: Condition, actualValue: any): string {
+  const { variable, operator, value } = condition;
+
+  // Make variable name more readable
+  const readableVariable = variable
+    .split('.')
+    .map(part => part.replace(/_/g, ' '))
+    .join(' ')
+    .replace(/\b\w/g, l => l.toUpperCase());
+
+  // Handle missing/undefined values
+  if (actualValue === null || actualValue === undefined) {
+    return `${readableVariable} is missing - required to be ${getOperatorText(operator)} ${value}`;
+  }
+
+  // Generate specific reason based on operator
+  switch (operator) {
+    case '>=':
+      return `${readableVariable} is ${actualValue}, which is below the required minimum of ${value}`;
+    case '>':
+      return `${readableVariable} is ${actualValue}, which must be greater than ${value}`;
+    case '<=':
+      return `${readableVariable} is ${actualValue}, which exceeds the maximum allowed of ${value}`;
+    case '<':
+      return `${readableVariable} is ${actualValue}, which must be less than ${value}`;
+    case '=':
+      return `${readableVariable} is ${actualValue}, but it must equal ${value}`;
+    case '!=':
+      return `${readableVariable} is ${actualValue}, but it must not equal ${value}`;
+    case 'IN':
+      return `${readableVariable} is "${actualValue}", which is not in the allowed list: ${value}`;
+    case 'NOT IN':
+      return `${readableVariable} is "${actualValue}", which is in the restricted list: ${value}`;
+    case 'CONTAINS':
+      return `${readableVariable} ("${actualValue}") does not contain "${value}"`;
+    case 'STARTS_WITH':
+      return `${readableVariable} ("${actualValue}") does not start with "${value}"`;
+    case 'IS_NULL':
+      return `${readableVariable} has a value ("${actualValue}"), but it must be empty`;
+    case 'IS_NOT_NULL':
+      return `${readableVariable} is empty, but a value is required`;
+    default:
+      return `${readableVariable} (${actualValue}) does not meet the requirement: ${operator} ${value}`;
+  }
+}
+
+// Helper function to get operator text
+function getOperatorText(operator: string): string {
+  switch (operator) {
+    case '>=': return 'at least';
+    case '>': return 'greater than';
+    case '<=': return 'at most';
+    case '<': return 'less than';
+    case '=': return 'exactly';
+    case '!=': return 'not';
+    default: return operator;
+  }
+}
+
+// Helper function to generate human-readable manual check reasons
+function generateManualCheckReason(condition: Condition, actualValue: any): string {
+  const { variable, operator, value } = condition;
+
+  // Make variable name more readable
+  const readableVariable = variable
+    .split('.')
+    .map(part => part.replace(/_/g, ' '))
+    .join(' ')
+    .replace(/\b\w/g, l => l.toUpperCase());
+
+  // Generate specific reason for manual review
+  switch (operator) {
+    case '>=':
+      return `Manual verification required: ${readableVariable} is ${actualValue} (threshold: ${value}). Please verify applicant qualifications.`;
+    case '>':
+      return `Manual verification required: ${readableVariable} is ${actualValue} (above ${value}). Please review supporting documentation.`;
+    case '<=':
+      return `Manual verification required: ${readableVariable} is ${actualValue} (threshold: ${value}). Please assess risk factors.`;
+    case '<':
+      return `Manual verification required: ${readableVariable} is ${actualValue} (below ${value}). Please evaluate compensating factors.`;
+    case '=':
+      return `Manual verification required: ${readableVariable} matches ${value}. Please conduct additional review.`;
+    case 'IN':
+      return `Manual verification required: ${readableVariable} is "${actualValue}" (flagged category). Please verify details.`;
+    default:
+      return `Manual verification required for ${readableVariable} (current value: ${actualValue}). Please review case details.`;
+  }
 }
 
 // Helper function to get default node data based on type
