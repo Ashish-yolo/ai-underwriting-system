@@ -12,7 +12,7 @@ import * as path from 'path';
 async function runMigration() {
   const pool = new Pool({
     host: '3.227.209.82', // Resolved IPv4 address for aws-1-us-east-1.pooler.supabase.com
-    port: 6543,
+    port: 5432,
     database: 'postgres',
     user: 'postgres.glejgqtveeywjppbsxxv',
     password: 'Ashi08gmail.com',
