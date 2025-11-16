@@ -157,8 +157,8 @@ router.get('/overview', authenticate, async (req: Request, res: Response) => {
         c.name,
         c.type,
         COUNT(cl.id) as call_count,
-        SUM(CASE WHEN cl.status = 'success' THEN 1 ELSE 0 END) as success_count,
-        AVG(cl.response_time_ms) as avg_response_time
+        SUM(CASE WHEN cl.status_code >= 200 AND cl.status_code < 300 THEN 1 ELSE 0 END) as success_count,
+        AVG(cl.execution_time_ms) as avg_response_time
        FROM connectors c
        LEFT JOIN connector_logs cl ON c.id = cl.connector_id ${dateFilter ? 'AND cl.created_at >= $1' + (dateTo ? ' AND cl.created_at <= $2' : '') : ''}
        GROUP BY c.id, c.name, c.type
@@ -455,11 +455,11 @@ router.get('/connectors', authenticate, async (req: Request, res: Response) => {
         c.type,
         c.provider,
         COUNT(cl.id) as total_calls,
-        SUM(CASE WHEN cl.status = 'success' THEN 1 ELSE 0 END) as success_count,
-        SUM(CASE WHEN cl.status = 'error' THEN 1 ELSE 0 END) as error_count,
-        AVG(cl.response_time_ms) as avg_response_time,
-        MAX(cl.response_time_ms) as max_response_time,
-        MIN(cl.response_time_ms) as min_response_time
+        SUM(CASE WHEN cl.status_code >= 200 AND cl.status_code < 300 THEN 1 ELSE 0 END) as success_count,
+        SUM(CASE WHEN cl.error_message IS NOT NULL THEN 1 ELSE 0 END) as error_count,
+        AVG(cl.execution_time_ms) as avg_response_time,
+        MAX(cl.execution_time_ms) as max_response_time,
+        MIN(cl.execution_time_ms) as min_response_time
        FROM connectors c
        LEFT JOIN connector_logs cl ON c.id = cl.connector_id ${dateFilter ? 'AND ' + dateFilter.substring(5) : ''}
        GROUP BY c.id, c.name, c.type, c.provider
@@ -475,7 +475,7 @@ router.get('/connectors', authenticate, async (req: Request, res: Response) => {
         COUNT(*) as count
        FROM connector_logs cl
        JOIN connectors c ON cl.connector_id = c.id
-       WHERE cl.status = 'error' ${dateFilter}
+       WHERE cl.error_message IS NOT NULL ${dateFilter}
        GROUP BY c.name, cl.error_message
        ORDER BY count DESC
        LIMIT 20`,
@@ -487,7 +487,7 @@ router.get('/connectors', authenticate, async (req: Request, res: Response) => {
       `SELECT
         DATE(cl.created_at) as date,
         c.name,
-        AVG(cl.response_time_ms) as avg_response_time
+        AVG(cl.execution_time_ms) as avg_response_time
        FROM connector_logs cl
        JOIN connectors c ON cl.connector_id = c.id
        WHERE cl.created_at >= NOW() - INTERVAL '30 days' ${dateFilter}
@@ -554,7 +554,7 @@ router.get('/realtime', authenticate, async (req: Request, res: Response) => {
         (SELECT COUNT(*) FROM connector_logs cl
          WHERE cl.connector_id = c.id
          AND cl.created_at >= NOW() - INTERVAL '5 minutes'
-         AND cl.status = 'error') as recent_errors
+         AND cl.error_message IS NOT NULL) as recent_errors
        FROM connectors c
        WHERE c.is_active = true`
     );
