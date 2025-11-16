@@ -31,40 +31,38 @@ const Layout: React.FC = () => {
     <div className="min-h-screen bg-gray-100">
       {/* Top Navigation */}
       <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Left side - Logo and Title */}
-            <div className="flex items-center space-x-3">
-              <img
-                src="/umoney-logo.svg"
-                alt="Umoney Logo"
-                className="h-10 w-auto"
-              />
-              <div className="h-8 w-px bg-gray-300"></div>
-              <h1 className="text-xl font-semibold text-gray-800">
-                AI Underwriting System
-              </h1>
-            </div>
+        <div className="flex justify-between items-center h-16 px-6">
+          {/* Left side - Logo and Title */}
+          <div className="flex items-center space-x-3">
+            <img
+              src="/umoney-logo.svg"
+              alt="Umoney Logo"
+              className="h-10 w-auto"
+            />
+            <div className="h-8 w-px bg-gray-300"></div>
+            <h1 className="text-xl font-semibold text-gray-800">
+              AI Underwriting System
+            </h1>
+          </div>
 
-            {/* Right side - User info and Logout */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">
-                    {user?.name}
-                  </div>
-                  <div className="text-xs text-gray-500 capitalize">
-                    {user?.role === 'admin' ? 'System Administrator' : user?.role}
-                  </div>
+          {/* Right side - User info and Logout */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="text-right">
+                <div className="text-sm font-medium text-gray-900">
+                  {user?.name}
+                </div>
+                <div className="text-xs text-gray-500 capitalize">
+                  {user?.role === 'admin' ? 'System Administrator' : user?.role}
                 </div>
               </div>
-              <button
-                onClick={handleLogout}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
-              >
-                Logout
-              </button>
             </div>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </nav>
