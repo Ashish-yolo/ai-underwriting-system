@@ -1,12 +1,13 @@
 import React from 'react';
-import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { TestResults } from '../../stores/policyBuilderStore';
 
 interface TestResultsOverlayProps {
   results: TestResults | null;
+  onClose?: () => void;
 }
 
-export const TestResultsOverlay: React.FC<TestResultsOverlayProps> = ({ results }) => {
+export const TestResultsOverlay: React.FC<TestResultsOverlayProps> = ({ results, onClose }) => {
   if (!results) return null;
 
   // Collect all failed conditions and manual check reasons (deduplicated)
@@ -31,25 +32,36 @@ export const TestResultsOverlay: React.FC<TestResultsOverlayProps> = ({ results 
           : 'bg-yellow-50 border-2 border-yellow-500'
       }`}>
         {/* Final Decision Header */}
-        <div className="flex items-center gap-3 mb-3">
-          {results.finalDecision === 'Approved' && (
-            <CheckCircleIcon className="w-7 h-7 text-green-600" />
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-3">
+            {results.finalDecision === 'Approved' && (
+              <CheckCircleIcon className="w-7 h-7 text-green-600" />
+            )}
+            {results.finalDecision === 'Rejected' && (
+              <XCircleIcon className="w-7 h-7 text-red-600" />
+            )}
+            {results.finalDecision === 'Manual Review' && (
+              <ExclamationTriangleIcon className="w-7 h-7 text-yellow-600" />
+            )}
+            <h3 className={`text-xl font-bold ${
+              results.finalDecision === 'Approved'
+                ? 'text-green-900'
+                : results.finalDecision === 'Rejected'
+                ? 'text-red-900'
+                : 'text-yellow-900'
+            }`}>
+              Final Decision: {results.finalDecision}
+            </h3>
+          </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 rounded-lg hover:bg-gray-200 transition-colors"
+              title="Close"
+            >
+              <XMarkIcon className="w-6 h-6 text-gray-600" />
+            </button>
           )}
-          {results.finalDecision === 'Rejected' && (
-            <XCircleIcon className="w-7 h-7 text-red-600" />
-          )}
-          {results.finalDecision === 'Manual Review' && (
-            <ExclamationTriangleIcon className="w-7 h-7 text-yellow-600" />
-          )}
-          <h3 className={`text-xl font-bold ${
-            results.finalDecision === 'Approved'
-              ? 'text-green-900'
-              : results.finalDecision === 'Rejected'
-              ? 'text-red-900'
-              : 'text-yellow-900'
-          }`}>
-            Final Decision: {results.finalDecision}
-          </h3>
         </div>
 
         {/* Reasons for Rejection or Manual Review */}

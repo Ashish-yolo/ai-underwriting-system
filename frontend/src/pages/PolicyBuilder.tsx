@@ -347,7 +347,10 @@ const PolicyBuilder: React.FC = () => {
             <CanvasWithProvider />
 
             {/* Test Results Overlay */}
-            <TestResultsOverlay results={testResults} />
+            <TestResultsOverlay
+              results={testResults}
+              onClose={() => clearTestResults()}
+            />
           </div>
 
           {showRightSidebar && selectedNode && (
