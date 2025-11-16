@@ -564,6 +564,22 @@ export const usePolicyBuilderStore = create<PolicyBuilderState>((set, get) => ({
     });
 
     set({ testResults: results });
+
+    // Record test execution for metrics (fire and forget)
+    try {
+      const { policyId } = get();
+      fetch('http://localhost:3000/api/metrics/test-execution', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          policyId: policyId || 'test',
+          finalDecision,
+          executionTimeMs: 0, // Can be calculated if needed
+        }),
+      }).catch(err => console.warn('Failed to record metrics:', err));
+    } catch (error) {
+      console.warn('Metrics recording skipped:', error);
+    }
   },
 }));
 

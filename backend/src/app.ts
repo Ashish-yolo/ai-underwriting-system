@@ -9,6 +9,7 @@ import underwritingRoutes from './api/routes/underwriting.routes';
 import policyRoutes from './api/routes/policy.routes';
 import manualReviewRoutes from './api/routes/manual-review.routes';
 import analyticsRoutes from './api/routes/analytics.routes';
+import metricsRoutes from './routes/metrics.routes';
 
 const app: Application = express();
 
@@ -73,6 +74,7 @@ app.use('/api/connectors', connectorRoutes);
 app.use('/api/policies', policyRoutes);
 app.use('/api/manual-review', manualReviewRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/metrics', metricsRoutes);
 app.use('/api/v1/underwrite', underwritingRoutes);
 
 // 404 handler

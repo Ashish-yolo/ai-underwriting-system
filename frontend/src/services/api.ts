@@ -293,7 +293,7 @@ class ApiService {
   }
 
   async getRealtimeMetrics() {
-    const response = await this.api.get('/analytics/realtime');
+    const response = await this.api.get('/api/metrics/realtime');
     return response.data;
   }
 
