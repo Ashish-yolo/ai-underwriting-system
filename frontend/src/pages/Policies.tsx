@@ -43,14 +43,24 @@ const Policies: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this policy?')) return;
+    if (!confirm('Are you sure you want to delete this policy? This action cannot be undone.')) return;
 
     try {
-      await apiService.deletePolicy(id);
+      const result = await apiService.deletePolicy(id);
+      console.log('Delete result:', result);
+
+      // Show success message
+      alert('Policy deleted successfully');
+
+      // Reload policies
       loadPolicies();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to delete policy:', error);
-      alert('Failed to delete policy');
+      console.error('Error details:', error.response?.data || error.message);
+
+      // Show detailed error message
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to delete policy. You may not have permission to delete this policy.';
+      alert(`Error: ${errorMessage}`);
     }
   };
 
